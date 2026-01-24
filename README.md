@@ -12,11 +12,13 @@ A local-first stock monitoring agent that detects meaningful price movements and
 - Automatic fallback: Twilio → Apple Messages → Console
 - SQLite storage for price history
 - 60-second price caching to reduce API calls
+- **Runs automatically on macOS** via launchd service
 - Runs periodically via cron (no background service)
 
 ## Requirements
 
 - Python 3.9 or higher
+- macOS (for launchd service) or Linux (for cron)
 - Ollama (for LLM explanations)
 - 8GB RAM recommended
 - Optional: API keys for market data providers (Finnhub, Twelve Data, Alpha Vantage)
@@ -30,7 +32,7 @@ git clone https://github.com/ramonbnuezjr/stock_tracker_agent.git
 cd stock_tracker_agent
 
 # Create virtual environment
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
@@ -48,11 +50,11 @@ brew install ollama
 # Pull a model
 ollama pull mistral:7b
 
-# Start the server
+# Start the server (if not running as service)
 ollama serve
 ```
 
-### 3. Configure (Optional)
+### 3. Configure
 
 ```bash
 # Copy example config
@@ -62,7 +64,16 @@ cp .env.example .env
 nano .env
 ```
 
-### 4. Run
+### 4. Install as macOS Service (Recommended)
+
+```bash
+# Install as launchd service (runs automatically)
+./scripts/install_service.sh
+
+# The service will run every 30 minutes during market hours
+```
+
+### 5. Manual Run (Alternative)
 
 ```bash
 # Check stock prices and send alerts
@@ -73,6 +84,27 @@ python -m src.main status
 
 # Send a test notification
 python -m src.main test
+```
+
+## macOS Service Management
+
+After installing the service:
+
+```bash
+# Check service status
+launchctl list | grep com.ramonbnuezjr.stocktracker
+
+# View logs
+tail -f logs/stock_tracker.log
+
+# Stop service
+launchctl unload ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
+
+# Start service
+launchctl load ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
+
+# Uninstall service
+./scripts/uninstall_service.sh
 ```
 
 ## Configuration
@@ -128,7 +160,7 @@ NOTIFICATION_CHANNEL=apple_messages
 NOTIFY_PHONE=+15551234567
 ```
 
-## Cron Setup
+## Cron Setup (Alternative to launchd)
 
 Run every 30 minutes during market hours:
 
@@ -194,9 +226,10 @@ stock_tracker/
 ├── tests/
 │   ├── unit/            # Unit tests
 │   └── integration/     # Integration tests
+├── scripts/              # Setup and utility scripts
 ├── .cursor/             # Project documentation
 ├── data/                # Local storage (gitignored)
-└── requirements.txt     # Dependencies
+└── logs/                # Application logs (gitignored)
 ```
 
 ## How It Works
