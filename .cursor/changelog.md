@@ -20,6 +20,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0] - 2026-01-24
+
+### Added
+- Core stock price tracking via yfinance
+- Threshold-based alert detection
+- LLM-powered explanations via Ollama
+- News headline fetching via Google News RSS
+- SQLite storage for price history and execution logs
+- Console notification output
+- Email notification support via SMTP
+- CLI interface with commands: check, test, status
+- Comprehensive unit test suite
+- Integration test suite
+- Full documentation in .cursor/
+
+### Technical
+- Pydantic models for data validation
+- pydantic-settings for configuration
+- Adapter pattern for external services
+- Service layer for business logic
+- Type hints throughout codebase
+- Black formatting, mypy type checking, ruff linting
+
+---
+
 ## [0.0.1] - 2026-01-24
 
 ### Added
@@ -28,9 +53,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.cursor/` control documents (instructions, architecture, roadmap)
 - Root documentation (PRD.md, README.md)
 - `.cursorignore` configuration
-
-### Changed
-- Nothing
-
-### Fixed
-- Nothing
