@@ -10,13 +10,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Nothing yet
+- macOS launchd service setup for automatic execution
+- Service installation script (`scripts/install_service.sh`)
+- Service uninstallation script (`scripts/uninstall_service.sh`)
+- Test script for Apple Messages notifications (`scripts/test_imessage_notification.py`)
+- `SETUP_MACOS.md` guide for macOS service setup
+- Service management documentation in README
 
 ### Changed
-- Nothing yet
+- Updated README with macOS service management commands
+- Updated `.gitignore` to exclude logs/ and data/ directories
 
-### Fixed
-- Nothing yet
+### Technical
+- Service runs every 30 minutes automatically
+- Plist file generated dynamically with project paths
+- Service can be managed via launchctl commands
+
+---
+
+## [0.4.0] - 2026-01-24
+
+### Added
+- macOS launchd service setup for automatic execution
+- Service installation script (`scripts/install_service.sh`)
+- Service uninstallation script (`scripts/uninstall_service.sh`)
+- Test script for Apple Messages notifications (`scripts/test_imessage_notification.py`)
+- `SETUP_MACOS.md` guide for macOS service setup
+- Service management documentation in README
+
+### Changed
+- Updated README with macOS service management commands
+- Updated `.gitignore` to exclude logs/ and data/ directories
+
+### Technical
+- Service runs every 30 minutes automatically
+- Plist file generated dynamically with project paths
+- Service can be managed via launchctl commands
 
 ---
 

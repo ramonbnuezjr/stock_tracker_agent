@@ -7,6 +7,7 @@
 | v0.1 | ✅ Complete | MVP — Core functionality |
 | v0.2 | ✅ Complete | SMS & Messaging channels |
 | v0.3 | ✅ Complete | Multi-provider market data |
+| v0.4 | ✅ Complete | macOS service setup |
 | v1.0 | 📋 Planned | Production-ready release |
 
 ---

@@ -57,7 +57,18 @@
 - **Learning**: Explanations only appear on threshold breaches, not on first run (no previous prices to compare)
 - Updated documentation to clarify when explanations are generated
 
+### Session 5: v0.4 macOS Service Setup
+- Created macOS launchd service setup scripts
+- Implemented `install_service.sh` for one-command installation
+- Implemented `uninstall_service.sh` for service removal
+- Created `create_launchd_plist.py` to generate plist dynamically
+- Created `test_imessage_notification.py` for testing notifications
+- Service installed and running automatically every 30 minutes
+- Tested Apple Messages notification successfully
+- Updated all documentation (README, SETUP_MACOS.md, changelog, activity_log)
+- Service verified working with real market data APIs
+
 ### Next Steps
 - Complete Twilio A2P registration when available
-- Set up cron job for periodic execution
 - Consider batch notification mode for v1.0
+- Monitor service logs for production usage
