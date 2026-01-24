@@ -1,0 +1,140 @@
+# Python Coding Standards
+
+## Enforcement Level
+**MANDATORY** — Cursor MUST audit every generation for compliance and reject violations.
+
+---
+
+## PEP 8 Compliance
+
+### Naming Conventions
+- `snake_case` for variables and functions
+- `CapWords` for classes
+- `UPPER_CASE` for constants
+
+### Formatting
+- 4-space indentation (no tabs)
+- Maximum 79-character line length
+- Black formatting enforced on all code
+
+### Import Order
+1. Standard library imports
+2. Third-party imports
+3. Local application imports
+
+Each group separated by a blank line.
+
+```python
+# Correct
+import os
+import sys
+
+import requests
+from pydantic import BaseModel
+
+from app.models import User
+from app.utils import helpers
+```
+
+---
+
+## Type Hints
+
+**REQUIRED** for all functions and public methods.
+
+```python
+# Correct
+def calculate_total(items: list[float], tax_rate: float) -> float:
+    """Calculate total with tax."""
+    return sum(items) * (1 + tax_rate)
+
+# Incorrect — missing type hints
+def calculate_total(items, tax_rate):
+    return sum(items) * (1 + tax_rate)
+```
+
+---
+
+## Docstrings
+
+**REQUIRED** for all public functions, classes, and modules.
+
+### Format
+```python
+def fetch_stock_price(symbol: str, date: str | None = None) -> float:
+    """Fetch the current or historical stock price.
+
+    Args:
+        symbol: The stock ticker symbol (e.g., 'AAPL').
+        date: Optional date in YYYY-MM-DD format. Defaults to current price.
+
+    Returns:
+        The stock price as a float.
+
+    Raises:
+        ValueError: If the symbol is invalid.
+        ConnectionError: If the API is unreachable.
+    """
+```
+
+---
+
+## Code Style Preferences
+
+### Prefer Comprehensions
+```python
+# Preferred
+squares = [x ** 2 for x in range(10)]
+
+# Avoid
+squares = []
+for x in range(10):
+    squares.append(x ** 2)
+```
+
+### None Comparisons
+```python
+# Correct
+if value is None:
+    ...
+if value is not None:
+    ...
+
+# Incorrect
+if value == None:
+    ...
+```
+
+### Boolean Comparisons
+```python
+# Correct
+if flag:
+    ...
+if not flag:
+    ...
+
+# Incorrect
+if flag == True:
+    ...
+```
+
+---
+
+## Static Analysis
+
+- Code MUST pass `mypy` with no errors
+- Code MUST pass `black --check`
+- Code MUST pass `ruff` linting
+
+---
+
+## Cursor Audit Checklist
+
+Before accepting any generated code, verify:
+- [ ] PEP 8 naming conventions followed
+- [ ] Type hints present on all functions
+- [ ] Docstrings present and complete
+- [ ] Line length ≤ 79 characters
+- [ ] Imports properly ordered
+- [ ] No `== None` comparisons
+- [ ] Comprehensions used where appropriate

@@ -1,0 +1,197 @@
+# Security Standards
+
+## Enforcement Level
+**MANDATORY** — Cursor MUST audit every generation and REJECT violations immediately.
+
+---
+
+## Absolutely Prohibited
+
+The following are **NEVER** allowed under any circumstances:
+
+| Function | Risk | Alternative |
+|----------|------|-------------|
+| `eval()` | Arbitrary code execution | Use `ast.literal_eval()` for literals |
+| `exec()` | Arbitrary code execution | Refactor to avoid dynamic execution |
+| `compile()` | Code injection | Use static code paths |
+| `pickle` | Arbitrary code execution via deserialization | Use `json` or Pydantic |
+
+```python
+# FORBIDDEN — Cursor must reject
+result = eval(user_input)
+exec(dynamic_code)
+data = pickle.loads(untrusted_bytes)
+
+# ACCEPTABLE
+import ast
+result = ast.literal_eval("{'key': 'value'}")
+data = json.loads(trusted_json_string)
+```
+
+---
+
+## Secrets Management
+
+### Rules
+- Secrets MUST be loaded via `os.getenv()` ONLY
+- Secrets MUST NEVER appear as string literals in code
+- Secrets MUST NEVER be logged or printed
+- Secrets MUST NEVER be committed to version control
+
+```python
+# Correct
+import os
+
+API_KEY = os.getenv("API_KEY")
+if not API_KEY:
+    raise EnvironmentError("API_KEY environment variable is required")
+
+# FORBIDDEN
+API_KEY = "sk-1234567890abcdef"  # Never do this
+```
+
+### Required .env pattern
+```
+API_KEY=your_key_here
+DATABASE_URL=postgresql://...
+```
+
+---
+
+## Input Validation
+
+### Requirements
+- ALL external input MUST be validated before use
+- Use Pydantic models for structured validation
+- Reject malformed input explicitly with clear errors
+
+```python
+from pydantic import BaseModel, Field, validator
+
+class StockQuery(BaseModel):
+    """Validated stock query input."""
+    
+    symbol: str = Field(..., min_length=1, max_length=10)
+    start_date: str | None = None
+    
+    @validator("symbol")
+    def symbol_uppercase(cls, v: str) -> str:
+        """Ensure symbol is uppercase alphanumeric."""
+        cleaned = v.upper().strip()
+        if not cleaned.isalnum():
+            raise ValueError("Symbol must be alphanumeric")
+        return cleaned
+```
+
+---
+
+## Safe Deserialization
+
+### YAML
+```python
+# Correct — use safe_load ONLY
+import yaml
+
+with open("config.yaml") as f:
+    config = yaml.safe_load(f)
+
+# FORBIDDEN
+config = yaml.load(f, Loader=yaml.FullLoader)  # Unsafe
+config = yaml.load(f)  # Unsafe
+```
+
+### XML
+```python
+# Correct — use defusedxml
+from defusedxml import ElementTree
+
+tree = ElementTree.parse("data.xml")
+
+# FORBIDDEN
+from xml.etree import ElementTree  # Vulnerable to XXE
+```
+
+---
+
+## Error Handling
+
+### Rules
+- NEVER expose stack traces to end users
+- Use structured logging (not print statements)
+- Catch exceptions generically only when explicitly justified
+
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+def fetch_data(url: str) -> dict:
+    """Fetch data with safe error handling."""
+    try:
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        logger.error("Failed to fetch data", extra={"url": url, "error": str(e)})
+        raise DataFetchError("Unable to retrieve data") from e
+```
+
+---
+
+## Dependency Security
+
+### Rules
+- ALL dependencies MUST be pinned to exact versions
+- Known vulnerabilities MUST be flagged and addressed
+- Run `pip-audit` or `safety check` regularly
+
+```
+# requirements.txt — Correct
+requests==2.31.0
+pydantic==2.5.0
+
+# Incorrect — unpinned
+requests
+pydantic>=2.0
+```
+
+---
+
+## Network Security
+
+- Enforce HTTPS/TLS for all external communications
+- Validate SSL certificates (never disable verification)
+- Set reasonable timeouts on all network calls
+
+```python
+# Correct
+response = requests.get(url, timeout=30, verify=True)
+
+# FORBIDDEN
+response = requests.get(url, verify=False)  # Disables SSL verification
+```
+
+---
+
+## Principle of Least Privilege
+
+- Request only necessary permissions
+- Limit file system access to required paths
+- Use read-only access where possible
+- Avoid running as root/admin
+
+---
+
+## Cursor Security Audit Checklist
+
+Before accepting any generated code, verify:
+- [ ] No `eval()`, `exec()`, `compile()`, or `pickle`
+- [ ] Secrets loaded via `os.getenv()` only
+- [ ] No hardcoded secrets or credentials
+- [ ] All input validated with Pydantic or equivalent
+- [ ] `yaml.safe_load()` used for YAML
+- [ ] `defusedxml` used for XML
+- [ ] No stack traces exposed in error responses
+- [ ] All dependencies pinned
+- [ ] HTTPS enforced with certificate verification
+- [ ] Appropriate timeouts on network calls

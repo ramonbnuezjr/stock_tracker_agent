@@ -1,0 +1,177 @@
+# Development Workflow
+
+## Enforcement Level
+**MANDATORY** — Cursor MUST refuse work that violates this workflow.
+
+---
+
+## Test-Driven Development (TDD)
+
+### Default Mode
+TDD is the **default development mode** for this project.
+
+### Core Principle
+**Tests MUST be written BEFORE implementation.**
+
+### TDD Cycle
+```
+1. Write a failing test
+2. Write minimal code to pass the test
+3. Refactor while keeping tests green
+4. Repeat
+```
+
+### Coverage Target
+- **≥90% test coverage** for core business logic
+- Use `pytest-cov` to measure coverage
+- Coverage reports required before merging
+
+```bash
+# Run tests with coverage
+pytest --cov=src --cov-report=term-missing --cov-fail-under=90
+```
+
+---
+
+## Allowed Development Flows
+
+### Flow 1: Standard TDD (Default)
+```
+Test → Implementation → Refactor → Commit
+```
+
+### Flow 2: Prototype → Harden (Exceptional)
+When rapid exploration is needed:
+
+```
+1. YOLO/Prototype phase (marked clearly)
+2. Manual review of prototype
+3. TDD hardening phase
+4. Delete prototype, keep hardened code
+```
+
+**Requirements for Flow 2:**
+- Prototype code MUST be marked with `# PROTOTYPE` comments
+- Prototype code MUST NOT be merged to main
+- Hardening phase MUST achieve full TDD coverage
+
+---
+
+## Documentation Requirements
+
+### Changelog (changelog.md)
+Update for:
+- New features
+- Bug fixes
+- Breaking changes
+- Dependency updates
+
+Format:
+```markdown
+## [0.1.0] - 2026-01-24
+### Added
+- Initial stock price fetching functionality
+
+### Fixed
+- None
+
+### Changed
+- None
+```
+
+### Activity Log (activity_log.md)
+Update after:
+- Major development sessions
+- Significant decisions
+- Architecture changes
+
+Format:
+```markdown
+## 2026-01-24
+- Implemented stock price API integration
+- Decision: Using yfinance for data source
+- Next: Add caching layer
+```
+
+### Roadmap Alignment
+Before implementing new features:
+1. Check `roadmap.md` for alignment
+2. If feature not in roadmap, discuss first
+3. Update roadmap if scope changes
+
+---
+
+## Cursor Required References
+
+Cursor MUST reference these documents before generating code:
+
+| Document | Purpose |
+|----------|---------|
+| `instructions.md` | Project context and behavior guidelines |
+| `architecture.md` | System design and component boundaries |
+| `roadmap.md` | Current priorities and scope |
+| `rules/*.mdc` | Coding standards and constraints |
+
+### Reference Check
+Before any code generation:
+- [ ] Read `instructions.md` for project context
+- [ ] Check `architecture.md` for component placement
+- [ ] Verify `roadmap.md` alignment
+- [ ] Apply all `rules/*.mdc` standards
+
+---
+
+## Commit Standards
+
+### Message Format
+```
+<type>: <short description>
+
+<optional body>
+```
+
+### Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `refactor`: Code restructuring
+- `test`: Adding or updating tests
+- `docs`: Documentation changes
+- `chore`: Maintenance tasks
+
+### Examples
+```
+feat: add stock price fetching endpoint
+
+Implements the /api/stocks/{symbol} endpoint with
+caching and rate limiting.
+```
+
+---
+
+## Pull Request Checklist
+
+Before requesting review:
+- [ ] Tests written and passing
+- [ ] Coverage ≥90% for new code
+- [ ] All linting passes
+- [ ] Type checking passes
+- [ ] Documentation updated
+- [ ] Changelog updated
+- [ ] No security violations
+- [ ] Roadmap alignment verified
+
+---
+
+## Workflow Violations
+
+Cursor MUST refuse to:
+- Write implementation before tests (unless Flow 2 explicitly requested)
+- Skip documentation updates for meaningful changes
+- Ignore security rules for "quick fixes"
+- Generate code that conflicts with architecture.md
+- Implement features not aligned with roadmap.md
+
+When a violation is detected:
+1. Stop generation
+2. Explain the violation
+3. Request clarification or approval to proceed differently
