@@ -92,6 +92,14 @@ only if/when multi-user or production-scale messaging is introduced.
 2. Propose options with trade-offs
 3. Wait for clarification before proceeding
 
+### Cursor Sandbox Limitations
+
+Cursor's sandbox blocks network access (DNS, HTTP, etc.). This is intentional and cannot be disabled. To run smoke tests:
+
+- Use Cursor's **Integrated Terminal** (runs on your Mac, not in sandbox)
+- See `.cursor/sandbox_execution.md` for full details
+- The application includes a preflight check that detects sandboxed environments
+
 ---
 
 ## File Organization

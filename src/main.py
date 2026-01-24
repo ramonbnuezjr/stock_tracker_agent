@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import socket
 import sys
 from datetime import datetime
 
@@ -13,6 +14,22 @@ from src.services.news_service import NewsService
 from src.services.notification_service import NotificationService
 from src.services.price_service import PriceService
 from src.adapters.storage_adapter import StorageAdapter
+
+
+def check_network_connectivity() -> bool:
+    """Check if network connectivity is available.
+
+    Detects sandboxed environments (like Cursor's sandbox) that block
+    DNS resolution and network access.
+
+    Returns:
+        True if network is available, False if sandboxed.
+    """
+    try:
+        socket.gethostbyname("google.com")
+        return True
+    except Exception:
+        return False
 
 
 def setup_logging(level: str) -> None:
@@ -39,6 +56,17 @@ def run_check(settings: Settings) -> int:
     """
     logger = logging.getLogger(__name__)
     start_time = datetime.utcnow()
+
+    # Preflight check: Detect sandboxed environment
+    if not check_network_connectivity():
+        logger.warning(
+            "Network unavailable. Running in sandboxed environment. "
+            "Live market data will fail. Use terminal to run smoke tests."
+        )
+        logger.warning(
+            "See .cursor/sandbox_execution.md for details on Cursor's "
+            "sandbox limitations."
+        )
 
     # Initialize storage for execution logging
     storage = StorageAdapter(settings.ensure_data_dir())

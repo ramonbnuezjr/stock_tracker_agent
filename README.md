@@ -142,6 +142,16 @@ crontab -e
 
 ## Development
 
+### Running from Cursor
+
+**Important**: Cursor's sandbox blocks network access. To run smoke tests:
+
+1. Use Cursor's **Integrated Terminal** (bottom panel)
+2. Run commands directly: `./venv/bin/python -m src.main check`
+3. This runs on your Mac with full network access
+
+See `.cursor/sandbox_execution.md` for details on Cursor's sandbox limitations.
+
 ### Run Tests
 
 ```bash
