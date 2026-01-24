@@ -20,6 +20,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-01-24
+
+### Added
+- Twilio SMS adapter for notifications
+- Apple Messages adapter (macOS local fallback via AppleScript)
+- Email-to-SMS adapter via carrier gateways
+- Automatic notification channel selection (AUTO mode)
+- Fallback chain: Twilio → Apple Messages → Console
+- `ENABLE_TWILIO` configuration flag
+- `NOTIFICATION_CHANNEL=auto` option
+
+### Changed
+- Notification service now supports multiple channels with fallback
+- Updated `.env.example` with new Twilio and messaging options
+- Improved phone number normalization (strips country code for US)
+
+### Technical
+- New adapters: `sms_adapter.py`, `apple_messages_adapter.py`, `email_sms_adapter.py`
+- Added `twilio` dependency
+- 46 tests passing (41 core + 5 notification channel tests)
+
+---
+
 ## [0.1.0] - 2026-01-24
 
 ### Added

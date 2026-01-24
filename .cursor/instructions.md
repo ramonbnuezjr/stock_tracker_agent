@@ -11,7 +11,8 @@
 - Fetch current stock prices by ticker symbol
 - Detect price changes exceeding configurable thresholds
 - Generate natural-language explanations using local LLM (Ollama)
-- Send notifications via console or email
+- Send notifications via Twilio SMS, Apple Messages, email, or console
+- Automatic fallback: Twilio → Apple Messages → Console
 - Persist price history and execution metadata (SQLite)
 
 ---
@@ -30,6 +31,20 @@ The following are **out of scope** for this project:
 
 ---
 
+## Messaging Strategy
+
+Twilio SMS is the primary notification channel.
+Apple Messages is retained as a local fallback on macOS.
+A2P 10DLC is deferred for personal, low-volume usage and will be completed
+only if/when multi-user or production-scale messaging is introduced.
+
+**Channel Priority (AUTO mode):**
+1. **Twilio SMS** — If `ENABLE_TWILIO=true` and credentials configured
+2. **Apple Messages** — If running on macOS with Messages app available
+3. **Console** — Always available as final fallback
+
+---
+
 ## Key Dependencies
 
 | Dependency | Purpose |
@@ -38,6 +53,7 @@ The following are **out of scope** for this project:
 | `pydantic` | Data validation and models |
 | `pydantic-settings` | Environment configuration |
 | `ollama` | Local LLM integration |
+| `twilio` | SMS notifications |
 | `feedparser` | RSS news fetching |
 | `pytest` | Testing framework |
 | `pytest-cov` | Coverage reporting |
@@ -110,7 +126,12 @@ stock_tracker/
 |----------|----------|---------|-------------|
 | `STOCK_SYMBOLS` | No | `AAPL,NVDA,MSFT` | Comma-separated stock symbols |
 | `PRICE_THRESHOLD` | No | `1.5` | Alert threshold (percentage) |
-| `NOTIFICATION_CHANNEL` | No | `console` | `console`, `email`, or `sms` |
+| `NOTIFICATION_CHANNEL` | No | `auto` | `auto`, `sms`, `apple_messages`, `email`, `console` |
+| `ENABLE_TWILIO` | For SMS | `false` | Enable Twilio as primary SMS |
+| `TWILIO_ACCOUNT_SID` | For SMS | - | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | For SMS | - | Twilio auth token |
+| `TWILIO_FROM_NUMBER` | For SMS | - | Twilio phone number |
+| `NOTIFY_PHONE` | For SMS | - | Your phone number |
 | `SMTP_HOST` | For email | - | SMTP server hostname |
 | `SMTP_PORT` | For email | `587` | SMTP server port |
 | `SMTP_USER` | For email | - | SMTP username |

@@ -30,8 +30,19 @@
 - Created integration tests
 - Updated all documentation
 
+### Session 3: v0.2 SMS & Messaging Implementation
+- Implemented Twilio SMS adapter with full API integration
+- Implemented Apple Messages adapter using AppleScript (macOS)
+- Implemented Email-to-SMS adapter via carrier gateways (MMS)
+- Added automatic channel selection with fallback logic
+- Added `ENABLE_TWILIO` configuration flag
+- Added `NOTIFICATION_CHANNEL=auto` option
+- Updated notification service with fallback chain: Twilio → Apple Messages → Console
+- Added test suite for notification channels
+- Tested Apple Messages successfully on local Mac
+- Twilio A2P registration pending (deferred)
+
 ### Next Steps
-- Push changes to GitHub
+- Complete Twilio A2P registration when available
 - Set up cron job for periodic execution
-- Test with real Ollama instance
-- Configure email notifications
+- Consider batch notification mode for v1.0

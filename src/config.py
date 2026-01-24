@@ -17,7 +17,10 @@ class NotificationChannel(str, Enum):
 
     CONSOLE = "console"
     EMAIL = "email"
-    SMS = "sms"
+    SMS = "sms"  # Twilio SMS
+    EMAIL_SMS = "email_sms"  # Email-to-SMS via carrier gateway
+    APPLE_MESSAGES = "apple_messages"  # macOS Messages app
+    AUTO = "auto"  # Automatic: Twilio → Apple Messages → Console
 
 
 class LogLevel(str, Enum):
@@ -79,11 +82,21 @@ class Settings(BaseSettings):
     smtp_password: str = Field(default="")
     notify_email: str = Field(default="")
 
-    # SMS settings (v0.2)
+    # Twilio SMS settings
+    enable_twilio: bool = Field(
+        default=False,
+        description="Enable Twilio as primary SMS channel",
+    )
     twilio_account_sid: str = Field(default="")
     twilio_auth_token: str = Field(default="")
     twilio_from_number: str = Field(default="")
     notify_phone: str = Field(default="")
+
+    # Email-to-SMS settings (carrier gateway)
+    sms_carrier: str = Field(
+        default="att",
+        description="Carrier for email-to-SMS (att, verizon, tmobile, etc.)",
+    )
 
     # LLM settings
     ollama_model: str = Field(
@@ -160,6 +173,21 @@ class Settings(BaseSettings):
             self.twilio_auth_token,
             self.twilio_from_number,
             self.notify_phone,
+        ])
+
+    def validate_email_sms_config(self) -> bool:
+        """Check if Email-to-SMS configuration is complete.
+
+        Returns:
+            True if all required settings are present.
+        """
+        return all([
+            self.smtp_host,
+            self.smtp_port,
+            self.smtp_user,
+            self.smtp_password,
+            self.notify_phone,
+            self.sms_carrier,
         ])
 
     def ensure_data_dir(self) -> Path:

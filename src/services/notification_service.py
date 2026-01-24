@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import logging
+import platform
 from typing import List, Optional
 
 from src.adapters.email_adapter import EmailAdapter, EmailError
+from src.adapters.email_sms_adapter import EmailSMSAdapter, EmailSMSError
 from src.adapters.sms_adapter import SMSAdapter, SMSError
+from src.adapters.apple_messages_adapter import AppleMessagesAdapter, AppleMessagesError
 from src.config import NotificationChannel, Settings
 from src.models.alert import Alert
 
@@ -21,6 +24,11 @@ class NotificationError(Exception):
 
 class NotificationService:
     """Service for sending stock alert notifications.
+
+    Supports multiple channels with automatic fallback:
+    - Twilio SMS (primary when enabled)
+    - Apple Messages (local Mac fallback)
+    - Console (final fallback)
 
     Args:
         settings: Application settings.
@@ -38,17 +46,57 @@ class NotificationService:
         self.settings = settings
         self.channel = settings.notification_channel
 
-        # Initialize adapters based on channel
+        # Initialize adapters
         self._email_adapter: Optional[EmailAdapter] = None
         self._sms_adapter: Optional[SMSAdapter] = None
+        self._email_sms_adapter: Optional[EmailSMSAdapter] = None
+        self._apple_messages_adapter: Optional[AppleMessagesAdapter] = None
 
+        # Handle AUTO channel - determine best available
+        if self.channel == NotificationChannel.AUTO:
+            self._setup_auto_channel()
+        else:
+            self._setup_explicit_channel()
+
+    def _setup_auto_channel(self) -> None:
+        """Configure automatic channel selection with fallback.
+
+        Priority: Twilio → Apple Messages → Console
+        """
+        # Try Twilio first
+        if self.settings.enable_twilio and self.settings.validate_sms_config():
+            self._sms_adapter = SMSAdapter(
+                account_sid=self.settings.twilio_account_sid,
+                auth_token=self.settings.twilio_auth_token,
+                from_number=self.settings.twilio_from_number,
+            )
+            self.channel = NotificationChannel.SMS
+            logger.info("Auto-selected Twilio SMS as notification channel")
+            return
+
+        # Try Apple Messages on Mac
+        if platform.system() == "Darwin" and self.settings.notify_phone:
+            self._apple_messages_adapter = AppleMessagesAdapter(
+                recipient=self.settings.notify_phone
+            )
+            if self._apple_messages_adapter.is_available():
+                self.channel = NotificationChannel.APPLE_MESSAGES
+                logger.info("Auto-selected Apple Messages as notification channel")
+                return
+
+        # Fallback to console
+        self.channel = NotificationChannel.CONSOLE
+        logger.info("Auto-selected Console as notification channel")
+
+    def _setup_explicit_channel(self) -> None:
+        """Configure explicitly selected channel."""
         if self.channel == NotificationChannel.EMAIL:
-            if settings.validate_email_config():
+            if self.settings.validate_email_config():
                 self._email_adapter = EmailAdapter(
-                    host=settings.smtp_host,
-                    port=settings.smtp_port,
-                    username=settings.smtp_user,
-                    password=settings.smtp_password,
+                    host=self.settings.smtp_host,
+                    port=self.settings.smtp_port,
+                    username=self.settings.smtp_user,
+                    password=self.settings.smtp_password,
                 )
             else:
                 logger.warning(
@@ -58,16 +106,48 @@ class NotificationService:
                 self.channel = NotificationChannel.CONSOLE
 
         elif self.channel == NotificationChannel.SMS:
-            if settings.validate_sms_config():
+            if self.settings.validate_sms_config():
                 self._sms_adapter = SMSAdapter(
-                    account_sid=settings.twilio_account_sid,
-                    auth_token=settings.twilio_auth_token,
-                    from_number=settings.twilio_from_number,
+                    account_sid=self.settings.twilio_account_sid,
+                    auth_token=self.settings.twilio_auth_token,
+                    from_number=self.settings.twilio_from_number,
                 )
             else:
                 logger.warning(
-                    "SMS channel selected but config incomplete, "
+                    "Twilio SMS channel selected but config incomplete, "
                     "falling back to console"
+                )
+                self.channel = NotificationChannel.CONSOLE
+
+        elif self.channel == NotificationChannel.EMAIL_SMS:
+            if self.settings.validate_email_sms_config():
+                self._email_sms_adapter = EmailSMSAdapter(
+                    smtp_host=self.settings.smtp_host,
+                    smtp_port=self.settings.smtp_port,
+                    smtp_user=self.settings.smtp_user,
+                    smtp_password=self.settings.smtp_password,
+                    carrier=self.settings.sms_carrier,
+                )
+            else:
+                logger.warning(
+                    "Email-to-SMS channel selected but config incomplete, "
+                    "falling back to console"
+                )
+                self.channel = NotificationChannel.CONSOLE
+
+        elif self.channel == NotificationChannel.APPLE_MESSAGES:
+            if platform.system() == "Darwin" and self.settings.notify_phone:
+                self._apple_messages_adapter = AppleMessagesAdapter(
+                    recipient=self.settings.notify_phone
+                )
+                if not self._apple_messages_adapter.is_available():
+                    logger.warning(
+                        "Apple Messages not available, falling back to console"
+                    )
+                    self.channel = NotificationChannel.CONSOLE
+            else:
+                logger.warning(
+                    "Apple Messages requires macOS, falling back to console"
                 )
                 self.channel = NotificationChannel.CONSOLE
 
@@ -93,6 +173,10 @@ class NotificationService:
                 return self._send_email(alert)
             elif self.channel == NotificationChannel.SMS:
                 return self._send_sms(alert)
+            elif self.channel == NotificationChannel.EMAIL_SMS:
+                return self._send_email_sms(alert)
+            elif self.channel == NotificationChannel.APPLE_MESSAGES:
+                return self._send_apple_messages(alert)
             else:
                 logger.error("Unknown notification channel: %s", self.channel)
                 return False
@@ -124,9 +208,6 @@ class NotificationService:
 
         Returns:
             True if email was sent.
-
-        Raises:
-            NotificationError: If sending fails.
         """
         if self._email_adapter is None:
             logger.error("Email adapter not initialized")
@@ -145,11 +226,10 @@ class NotificationService:
             )
         except EmailError as e:
             logger.error("Email sending failed: %s", e)
-            # Fallback to console
             return self._send_console(alert)
 
     def _send_sms(self, alert: Alert) -> bool:
-        """Send alert via SMS.
+        """Send alert via Twilio SMS.
 
         Args:
             alert: The alert to send.
@@ -159,7 +239,7 @@ class NotificationService:
         """
         if self._sms_adapter is None:
             logger.error("SMS adapter not initialized")
-            return self._send_console(alert)
+            return self._fallback_send(alert)
 
         try:
             return self._sms_adapter.send(
@@ -167,9 +247,74 @@ class NotificationService:
                 message=alert.format_short(),
             )
         except SMSError as e:
-            logger.error("SMS sending failed: %s", e)
-            # Fallback to console
+            logger.error("Twilio SMS failed: %s", e)
+            return self._fallback_send(alert)
+
+    def _send_email_sms(self, alert: Alert) -> bool:
+        """Send alert via Email-to-SMS gateway.
+
+        Args:
+            alert: The alert to send.
+
+        Returns:
+            True if SMS was sent.
+        """
+        if self._email_sms_adapter is None:
+            logger.error("Email-to-SMS adapter not initialized")
             return self._send_console(alert)
+
+        try:
+            return self._email_sms_adapter.send(
+                phone_number=self.settings.notify_phone,
+                alert=alert,
+            )
+        except EmailSMSError as e:
+            logger.error("Email-to-SMS sending failed: %s", e)
+            return self._send_console(alert)
+
+    def _send_apple_messages(self, alert: Alert) -> bool:
+        """Send alert via Apple Messages.
+
+        Args:
+            alert: The alert to send.
+
+        Returns:
+            True if message was sent.
+        """
+        if self._apple_messages_adapter is None:
+            logger.error("Apple Messages adapter not initialized")
+            return self._send_console(alert)
+
+        try:
+            return self._apple_messages_adapter.send(alert.format_short())
+        except AppleMessagesError as e:
+            logger.error("Apple Messages failed: %s", e)
+            return self._send_console(alert)
+
+    def _fallback_send(self, alert: Alert) -> bool:
+        """Try fallback channels when primary fails.
+
+        Fallback order: Apple Messages → Console
+
+        Args:
+            alert: The alert to send.
+
+        Returns:
+            True if any fallback succeeded.
+        """
+        # Try Apple Messages on Mac
+        if platform.system() == "Darwin" and self.settings.notify_phone:
+            try:
+                adapter = AppleMessagesAdapter(recipient=self.settings.notify_phone)
+                if adapter.is_available():
+                    logger.info("Falling back to Apple Messages")
+                    return adapter.send(alert.format_short())
+            except AppleMessagesError as e:
+                logger.warning("Apple Messages fallback failed: %s", e)
+
+        # Final fallback to console
+        logger.info("Falling back to console output")
+        return self._send_console(alert)
 
     def _format_email_subject(self, alert: Alert) -> str:
         """Format email subject line.
