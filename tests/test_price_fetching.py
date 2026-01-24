@@ -14,8 +14,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.adapters.market_data_exceptions import MarketDataUnavailableError
 from src.adapters.yfinance_adapter import YFinanceAdapter, YFinanceError
+from src.models.market_data import PriceQuote
 from src.models.stock import PricePoint
+from src.services.market_data_service import MarketDataService
 from src.services.price_service import PriceService
 
 
@@ -48,27 +51,34 @@ class TestPriceFetching:
         """
         Fetching the previous reference price should return a numeric value.
         """
-        with patch("src.services.price_service.YFinanceAdapter") as mock_class:
-            mock_adapter = MagicMock()
-            mock_class.return_value = mock_adapter
+        mock_market_data = MagicMock(spec=MarketDataService)
+        mock_market_data.get_latest_price.return_value = PriceQuote(
+            symbol="AAPL",
+            price=Decimal("150.00"),
+            timestamp=datetime.utcnow(),
+            provider_name="test",
+        )
 
-            # Store a price first
-            service = PriceService(data_dir=temp_data_dir)
-            service.storage.save_price(
-                PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("148.50"),
-                    timestamp=datetime(2026, 1, 23),
-                )
+        # Store a price first
+        service = PriceService(
+            data_dir=temp_data_dir,
+            market_data_service=mock_market_data,
+        )
+        service.storage.save_price(
+            PricePoint(
+                symbol="AAPL",
+                price=Decimal("148.50"),
+                timestamp=datetime(2026, 1, 23),
             )
+        )
 
-            # Fetch previous price
-            previous = service.get_stored_price("AAPL")
+        # Fetch previous price
+        previous = service.get_stored_price("AAPL")
 
-            assert previous is not None
-            assert isinstance(previous.price, Decimal)
-            assert previous.price > 0
-            assert float(previous.price) == 148.50
+        assert previous is not None
+        assert isinstance(previous.price, Decimal)
+        assert previous.price > 0
+        assert float(previous.price) == 148.50
 
     def test_invalid_symbol_raises_clean_error(self) -> None:
         """
@@ -96,16 +106,20 @@ class TestPriceFetching:
         """
         Price service should handle fetch errors without crashing.
         """
-        with patch("src.services.price_service.YFinanceAdapter") as mock_class:
-            mock_adapter = MagicMock()
-            mock_adapter.get_current_price.side_effect = YFinanceError("API error")
-            mock_class.return_value = mock_adapter
+        mock_market_data = MagicMock(spec=MarketDataService)
+        mock_market_data.get_latest_price.side_effect = MarketDataUnavailableError(
+            "INVALID",
+            "API error",
+        )
 
-            service = PriceService(data_dir=temp_data_dir)
-            result = service.get_price("INVALID")
+        service = PriceService(
+            data_dir=temp_data_dir,
+            market_data_service=mock_market_data,
+        )
+        result = service.get_price("INVALID")
 
-            # Should return None, not raise
-            assert result is None
+        # Should return None, not raise
+        assert result is None
 
     def test_price_point_requires_positive_value(self) -> None:
         """
@@ -144,27 +158,30 @@ class TestPriceFetching:
         """
         Fetching multiple symbols should return prices for each.
         """
-        with patch("src.services.price_service.YFinanceAdapter") as mock_class:
-            mock_adapter = MagicMock()
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("150.00"),
-                    timestamp=datetime.utcnow(),
-                ),
-                "NVDA": PricePoint(
-                    symbol="NVDA",
-                    price=Decimal("450.00"),
-                    timestamp=datetime.utcnow(),
-                ),
-            }
-            mock_class.return_value = mock_adapter
+        mock_market_data = MagicMock(spec=MarketDataService)
+        mock_market_data.get_latest_price.side_effect = [
+            PriceQuote(
+                symbol="AAPL",
+                price=Decimal("150.00"),
+                timestamp=datetime.utcnow(),
+                provider_name="test",
+            ),
+            PriceQuote(
+                symbol="NVDA",
+                price=Decimal("450.00"),
+                timestamp=datetime.utcnow(),
+                provider_name="test",
+            ),
+        ]
 
-            service = PriceService(data_dir=temp_data_dir)
-            prices = service.fetch_current_prices(["AAPL", "NVDA"])
+        service = PriceService(
+            data_dir=temp_data_dir,
+            market_data_service=mock_market_data,
+        )
+        prices = service.fetch_current_prices(["AAPL", "NVDA"])
 
-            assert len(prices) == 2
-            assert "AAPL" in prices
-            assert "NVDA" in prices
-            assert float(prices["AAPL"].price) == 150.00
-            assert float(prices["NVDA"].price) == 450.00
+        assert len(prices) == 2
+        assert "AAPL" in prices
+        assert "NVDA" in prices
+        assert float(prices["AAPL"].price) == 150.00
+        assert float(prices["NVDA"].price) == 450.00

@@ -13,8 +13,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.config import NotificationChannel, Settings
+from src.models.market_data import PriceQuote
 from src.models.stock import PricePoint
 from src.services.explanation_service import ExplanationService
+from src.services.market_data_service import MarketDataService
 from src.services.news_service import NewsService
 from src.services.notification_service import NotificationService
 from src.services.price_service import PriceService
@@ -32,42 +34,40 @@ class TestExecutionFlow:
         When no threshold is exceeded, the system should exit
         without generating notifications.
         """
-        with patch("src.services.price_service.YFinanceAdapter") as mock_yf:
-            mock_adapter = MagicMock()
-            mock_yf.return_value = mock_adapter
+        mock_market_data = MagicMock(spec=MarketDataService)
+        mock_market_data.get_latest_price.side_effect = [
+            PriceQuote(
+                symbol="AAPL",
+                price=Decimal("100.00"),
+                timestamp=datetime(2026, 1, 23),
+                provider_name="test",
+            ),
+            PriceQuote(
+                symbol="AAPL",
+                price=Decimal("100.50"),  # Only 0.5% change
+                timestamp=datetime(2026, 1, 24),
+                provider_name="test",
+            ),
+        ]
 
-            # First run - store initial prices
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("100.00"),
-                    timestamp=datetime(2026, 1, 23),
-                ),
-            }
+        price_service = PriceService(
+            data_dir=temp_data_dir,
+            threshold=Decimal("2.0"),  # 2% threshold
+            market_data_service=mock_market_data,
+        )
 
-            price_service = PriceService(
-                data_dir=temp_data_dir,
-                threshold=Decimal("2.0"),  # 2% threshold
-            )
-            price_service.get_threshold_breaches(["AAPL"])
+        # First run - store initial prices
+        price_service.get_threshold_breaches(["AAPL"])
 
-            # Second run - small change, below threshold
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("100.50"),  # Only 0.5% change
-                    timestamp=datetime(2026, 1, 24),
-                ),
-            }
+        # Second run - small change, below threshold
+        breaches = price_service.get_threshold_breaches(["AAPL"])
 
-            breaches = price_service.get_threshold_breaches(["AAPL"])
+        # Should have no breaches
+        assert len(breaches) == 0
 
-            # Should have no breaches
-            assert len(breaches) == 0
-
-            # No notifications should be printed
-            captured = capsys.readouterr()
-            assert "STOCK ALERT" not in captured.out
+        # No notifications should be printed
+        captured = capsys.readouterr()
+        assert "STOCK ALERT" not in captured.out
 
     def test_execution_triggers_notification_when_threshold_met(
         self,
@@ -78,13 +78,25 @@ class TestExecutionFlow:
         When threshold is exceeded, explanation generation
         and notification dispatch should occur.
         """
-        with patch("src.services.price_service.YFinanceAdapter") as mock_yf, \
-             patch("src.services.news_service.NewsAdapter") as mock_news, \
+        with patch("src.services.news_service.NewsAdapter") as mock_news, \
              patch("src.services.explanation_service.OllamaAdapter") as mock_llm:
 
             # Setup mocks
-            mock_yf_adapter = MagicMock()
-            mock_yf.return_value = mock_yf_adapter
+            mock_market_data = MagicMock(spec=MarketDataService)
+            mock_market_data.get_latest_price.side_effect = [
+                PriceQuote(
+                    symbol="AAPL",
+                    price=Decimal("100.00"),
+                    timestamp=datetime(2026, 1, 23),
+                    provider_name="test",
+                ),
+                PriceQuote(
+                    symbol="AAPL",
+                    price=Decimal("105.00"),  # 5% change
+                    timestamp=datetime(2026, 1, 24),
+                    provider_name="test",
+                ),
+            ]
 
             mock_news_adapter = MagicMock()
             mock_news_adapter.get_headlines_text.return_value = [
@@ -107,30 +119,16 @@ class TestExecutionFlow:
             price_service = PriceService(
                 data_dir=temp_data_dir,
                 threshold=Decimal("1.5"),
+                market_data_service=mock_market_data,
             )
             news_service = NewsService()
             explanation_service = ExplanationService()
             notification_service = NotificationService(settings)
 
             # First run - store initial prices
-            mock_yf_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("100.00"),
-                    timestamp=datetime(2026, 1, 23),
-                ),
-            }
             price_service.get_threshold_breaches(["AAPL"])
 
             # Second run - large change, exceeds threshold
-            mock_yf_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("105.00"),  # 5% change
-                    timestamp=datetime(2026, 1, 24),
-                ),
-            }
-
             breaches = price_service.get_threshold_breaches(["AAPL"])
 
             # Should have one breach
@@ -178,20 +176,17 @@ class TestExecutionFlow:
         """
         start_time = time.time()
 
-        with patch("src.services.price_service.YFinanceAdapter") as mock_yf, \
-             patch("src.services.news_service.NewsAdapter") as mock_news, \
+        with patch("src.services.news_service.NewsAdapter") as mock_news, \
              patch("src.services.explanation_service.OllamaAdapter") as mock_llm:
 
             # Setup mocks with minimal delay
-            mock_yf_adapter = MagicMock()
-            mock_yf_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("100.00"),
-                    timestamp=datetime.utcnow(),
-                ),
-            }
-            mock_yf.return_value = mock_yf_adapter
+            mock_market_data = MagicMock(spec=MarketDataService)
+            mock_market_data.get_latest_price.return_value = PriceQuote(
+                symbol="AAPL",
+                price=Decimal("100.00"),
+                timestamp=datetime.utcnow(),
+                provider_name="test",
+            )
 
             mock_news_adapter = MagicMock()
             mock_news_adapter.get_headlines_text.return_value = ["Test headline"]
@@ -207,7 +202,10 @@ class TestExecutionFlow:
                 data_dir=temp_data_dir,
             )
 
-            price_service = PriceService(data_dir=temp_data_dir)
+            price_service = PriceService(
+                data_dir=temp_data_dir,
+                market_data_service=mock_market_data,
+            )
             news_service = NewsService()
             explanation_service = ExplanationService()
             notification_service = NotificationService(settings)
@@ -237,41 +235,41 @@ class TestExecutionFlow:
         """
         Price data should persist between service instances.
         """
-        with patch("src.services.price_service.YFinanceAdapter") as mock_yf:
-            mock_adapter = MagicMock()
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("100.00"),
-                    timestamp=datetime(2026, 1, 23),
-                ),
-            }
-            mock_yf.return_value = mock_adapter
+        mock_market_data1 = MagicMock(spec=MarketDataService)
+        mock_market_data1.get_latest_price.return_value = PriceQuote(
+            symbol="AAPL",
+            price=Decimal("100.00"),
+            timestamp=datetime(2026, 1, 23),
+            provider_name="test",
+        )
 
-            # First service instance
-            service1 = PriceService(data_dir=temp_data_dir)
-            service1.get_price_changes(["AAPL"])
+        # First service instance
+        service1 = PriceService(
+            data_dir=temp_data_dir,
+            market_data_service=mock_market_data1,
+        )
+        service1.get_price_changes(["AAPL"])
 
         # Create new service instance (simulating new run)
-        with patch("src.services.price_service.YFinanceAdapter") as mock_yf:
-            mock_adapter = MagicMock()
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("105.00"),
-                    timestamp=datetime(2026, 1, 24),
-                ),
-            }
-            mock_yf.return_value = mock_adapter
+        mock_market_data2 = MagicMock(spec=MarketDataService)
+        mock_market_data2.get_latest_price.return_value = PriceQuote(
+            symbol="AAPL",
+            price=Decimal("105.00"),
+            timestamp=datetime(2026, 1, 24),
+            provider_name="test",
+        )
 
-            # Second service instance should see previous price
-            service2 = PriceService(data_dir=temp_data_dir)
-            changes = service2.get_price_changes(["AAPL"])
+        # Second service instance should see previous price
+        service2 = PriceService(
+            data_dir=temp_data_dir,
+            market_data_service=mock_market_data2,
+        )
+        changes = service2.get_price_changes(["AAPL"])
 
-            # Should detect the change from persisted data
-            assert len(changes) == 1
-            assert changes[0].previous_price == Decimal("100.00")
-            assert changes[0].current_price == Decimal("105.00")
+        # Should detect the change from persisted data
+        assert len(changes) == 1
+        assert changes[0].previous_price == Decimal("100.00")
+        assert changes[0].current_price == Decimal("105.00")
 
     def test_multiple_symbols_processed_correctly(
         self,
@@ -281,60 +279,62 @@ class TestExecutionFlow:
         """
         Multiple stock symbols should all be processed.
         """
-        with patch("src.services.price_service.YFinanceAdapter") as mock_yf:
-            mock_adapter = MagicMock()
-            mock_yf.return_value = mock_adapter
-
+        mock_market_data = MagicMock(spec=MarketDataService)
+        mock_market_data.get_latest_price.side_effect = [
             # First run
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("100.00"),
-                    timestamp=datetime(2026, 1, 23),
-                ),
-                "NVDA": PricePoint(
-                    symbol="NVDA",
-                    price=Decimal("500.00"),
-                    timestamp=datetime(2026, 1, 23),
-                ),
-                "MSFT": PricePoint(
-                    symbol="MSFT",
-                    price=Decimal("300.00"),
-                    timestamp=datetime(2026, 1, 23),
-                ),
-            }
-
-            price_service = PriceService(
-                data_dir=temp_data_dir,
-                threshold=Decimal("2.0"),
-            )
-            price_service.get_price_changes(["AAPL", "NVDA", "MSFT"])
-
+            PriceQuote(
+                symbol="AAPL",
+                price=Decimal("100.00"),
+                timestamp=datetime(2026, 1, 23),
+                provider_name="test",
+            ),
+            PriceQuote(
+                symbol="NVDA",
+                price=Decimal("500.00"),
+                timestamp=datetime(2026, 1, 23),
+                provider_name="test",
+            ),
+            PriceQuote(
+                symbol="MSFT",
+                price=Decimal("300.00"),
+                timestamp=datetime(2026, 1, 23),
+                provider_name="test",
+            ),
             # Second run - mixed results
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("103.00"),  # +3% breach
-                    timestamp=datetime(2026, 1, 24),
-                ),
-                "NVDA": PricePoint(
-                    symbol="NVDA",
-                    price=Decimal("505.00"),  # +1% no breach
-                    timestamp=datetime(2026, 1, 24),
-                ),
-                "MSFT": PricePoint(
-                    symbol="MSFT",
-                    price=Decimal("291.00"),  # -3% breach
-                    timestamp=datetime(2026, 1, 24),
-                ),
-            }
+            PriceQuote(
+                symbol="AAPL",
+                price=Decimal("103.00"),  # +3% breach
+                timestamp=datetime(2026, 1, 24),
+                provider_name="test",
+            ),
+            PriceQuote(
+                symbol="NVDA",
+                price=Decimal("505.00"),  # +1% no breach
+                timestamp=datetime(2026, 1, 24),
+                provider_name="test",
+            ),
+            PriceQuote(
+                symbol="MSFT",
+                price=Decimal("291.00"),  # -3% breach
+                timestamp=datetime(2026, 1, 24),
+                provider_name="test",
+            ),
+        ]
 
-            breaches = price_service.get_threshold_breaches(["AAPL", "NVDA", "MSFT"])
+        price_service = PriceService(
+            data_dir=temp_data_dir,
+            threshold=Decimal("2.0"),
+            market_data_service=mock_market_data,
+        )
+        price_service.get_price_changes(["AAPL", "NVDA", "MSFT"])
 
-            # Should have 2 breaches (AAPL and MSFT)
-            assert len(breaches) == 2
-            symbols = {b.symbol for b in breaches}
-            assert symbols == {"AAPL", "MSFT"}
+        # Second run - mixed results
+        breaches = price_service.get_threshold_breaches(["AAPL", "NVDA", "MSFT"])
+
+        # Should have 2 breaches (AAPL and MSFT)
+        assert len(breaches) == 2
+        symbols = {b.symbol for b in breaches}
+        assert symbols == {"AAPL", "MSFT"}
 
     def test_execution_logs_stored(
         self,

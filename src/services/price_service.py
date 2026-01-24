@@ -7,9 +7,12 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from src.adapters.market_data_exceptions import MarketDataUnavailableError
 from src.adapters.storage_adapter import StorageAdapter
-from src.adapters.yfinance_adapter import YFinanceAdapter, YFinanceError
 from src.models.stock import PriceChange, PricePoint
+from src.services.market_data_converter import quote_to_price_point
+from src.services.market_data_factory import create_market_data_service
+from src.services.market_data_service import MarketDataService
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +23,7 @@ class PriceService:
     Args:
         data_dir: Directory for local data storage.
         threshold: Percentage threshold for price change alerts.
+        market_data_service: MarketDataService instance (optional).
 
     Returns:
         A PriceService instance.
@@ -29,16 +33,19 @@ class PriceService:
         self,
         data_dir: Path,
         threshold: Decimal = Decimal("1.5"),
+        market_data_service: Optional[MarketDataService] = None,
     ) -> None:
         """Initialize the price service.
 
         Args:
             data_dir: Directory for local data storage.
             threshold: Percentage threshold for alerts (default: 1.5%).
+            market_data_service: Optional MarketDataService instance.
+                If None, will be created from settings.
         """
         self.threshold = threshold
         self.storage = StorageAdapter(data_dir)
-        self.yfinance = YFinanceAdapter()
+        self.market_data = market_data_service
 
     def fetch_current_prices(
         self,
@@ -52,8 +59,27 @@ class PriceService:
         Returns:
             Dictionary mapping symbols to their current PricePoints.
         """
+        if self.market_data is None:
+            raise ValueError("MarketDataService not initialized")
+
         logger.info("Fetching prices for %d symbols", len(symbols))
-        return self.yfinance.get_prices(symbols)
+        results: Dict[str, PricePoint] = {}
+
+        for symbol in symbols:
+            symbol_upper = symbol.upper()
+            try:
+                quote = self.market_data.get_latest_price(symbol_upper)
+                results[symbol_upper] = quote_to_price_point(quote)
+                logger.debug(
+                    "Fetched %s via %s: %s",
+                    symbol_upper,
+                    quote.provider_name,
+                    quote.price,
+                )
+            except MarketDataUnavailableError as e:
+                logger.warning("Skipping %s: %s", symbol_upper, e)
+
+        return results
 
     def get_price_changes(
         self,
@@ -149,9 +175,13 @@ class PriceService:
         Returns:
             The current PricePoint or None if fetch failed.
         """
+        if self.market_data is None:
+            raise ValueError("MarketDataService not initialized")
+
         try:
-            return self.yfinance.get_current_price(symbol)
-        except YFinanceError:
+            quote = self.market_data.get_latest_price(symbol.upper())
+            return quote_to_price_point(quote)
+        except MarketDataUnavailableError:
             return None
 
     def get_stored_price(self, symbol: str) -> Optional[PricePoint]:

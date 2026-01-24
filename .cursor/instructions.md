@@ -49,7 +49,8 @@ only if/when multi-user or production-scale messaging is introduced.
 
 | Dependency | Purpose |
 |------------|---------|
-| `yfinance` | Stock data retrieval |
+| `yfinance` | Stock data retrieval (Yahoo Finance provider) |
+| `requests` | HTTP requests for market data providers |
 | `pydantic` | Data validation and models |
 | `pydantic-settings` | Environment configuration |
 | `ollama` | Local LLM integration |
@@ -127,6 +128,9 @@ stock_tracker/
 | `STOCK_SYMBOLS` | No | `AAPL,NVDA,MSFT` | Comma-separated stock symbols |
 | `PRICE_THRESHOLD` | No | `1.5` | Alert threshold (percentage) |
 | `NOTIFICATION_CHANNEL` | No | `auto` | `auto`, `sms`, `apple_messages`, `email`, `console` |
+| `FINNHUB_API_KEY` | Optional | - | Finnhub API key (60 calls/min free) |
+| `TWELVE_DATA_API_KEY` | Optional | - | Twelve Data API key (800 calls/day free) |
+| `ALPHA_VANTAGE_API_KEY` | Optional | - | Alpha Vantage API key (25 calls/day free) |
 | `ENABLE_TWILIO` | For SMS | `false` | Enable Twilio as primary SMS |
 | `TWILIO_ACCOUNT_SID` | For SMS | - | Twilio account SID |
 | `TWILIO_AUTH_TOKEN` | For SMS | - | Twilio auth token |

@@ -20,6 +20,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-01-24
+
+### Added
+- Multi-provider market data strategy with automatic fallback
+- `PriceQuote` model for normalized market data across providers
+- Four market data providers:
+  - `FinnhubProvider` (60 calls/min free tier)
+  - `TwelveDataProvider` (800 calls/day free tier)
+  - `AlphaVantageProvider` (25 calls/day free tier)
+  - `YahooFinanceProvider` (always available, last resort)
+- `MarketDataService` orchestrator with provider priority ordering
+- 60-second price caching to prevent redundant API calls
+- Graceful fallback on rate limits and provider failures
+- Provider-specific exception handling (`RateLimitError`, `ProviderUnavailableError`)
+
+### Changed
+- `PriceService` now uses `MarketDataService` instead of direct `YFinanceAdapter`
+- Provider priority: Finnhub → Twelve Data → Alpha Vantage → Yahoo Finance
+- Updated configuration with API key support for all providers
+- Improved error handling with clean fallback chain
+
+### Technical
+- New models: `PriceQuote`, market data exceptions
+- New services: `MarketDataService`, `market_data_factory`
+- New adapters: `providers/` directory with 4 provider implementations
+- 56 tests passing (15 new fallback tests + updated existing tests)
+- Demo script: `test_fallback_demo.py` for testing without API calls
+
+---
+
 ## [0.2.0] - 2026-01-24
 
 ### Added

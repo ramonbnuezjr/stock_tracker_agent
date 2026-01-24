@@ -5,17 +5,21 @@ A local-first stock monitoring agent that detects meaningful price movements and
 ## Features
 
 - Monitor multiple stock symbols for price changes
+- **Multi-provider market data** with automatic fallback (Finnhub, Twelve Data, Alpha Vantage, Yahoo Finance)
 - Configurable percentage threshold for alerts
 - LLM-generated explanations connecting price movements to news
-- Console and email notifications
+- Multiple notification channels: Twilio SMS, Apple Messages, Email, Console
+- Automatic fallback: Twilio → Apple Messages → Console
 - SQLite storage for price history
+- 60-second price caching to reduce API calls
 - Runs periodically via cron (no background service)
 
 ## Requirements
 
-- Python 3.10 or higher
+- Python 3.9 or higher
 - Ollama (for LLM explanations)
 - 8GB RAM recommended
+- Optional: API keys for market data providers (Finnhub, Twelve Data, Alpha Vantage)
 
 ## Quick Start
 
@@ -79,8 +83,21 @@ Set via environment variables or `.env` file:
 |----------|---------|-------------|
 | `STOCK_SYMBOLS` | `AAPL,NVDA,MSFT` | Comma-separated stock symbols |
 | `PRICE_THRESHOLD` | `1.5` | Alert threshold (percentage) |
-| `NOTIFICATION_CHANNEL` | `console` | `console` or `email` |
+| `NOTIFICATION_CHANNEL` | `auto` | `auto`, `sms`, `apple_messages`, `email`, `console` |
 | `OLLAMA_MODEL` | `mistral:7b` | LLM model for explanations |
+
+### Market Data Providers (Multi-Provider Fallback)
+
+The system automatically tries providers in priority order with fallback:
+
+1. **Finnhub** (60 calls/min free) - `FINNHUB_API_KEY=`
+2. **Twelve Data** (800 calls/day free) - `TWELVE_DATA_API_KEY=`
+3. **Alpha Vantage** (25 calls/day free) - `ALPHA_VANTAGE_API_KEY=`
+4. **Yahoo Finance** (always available, no key needed)
+
+Only configure API keys for providers you want to use. Yahoo Finance works as final fallback.
+
+### Notifications
 
 For email notifications:
 
@@ -91,6 +108,24 @@ SMTP_PORT=587
 SMTP_USER=your@gmail.com
 SMTP_PASSWORD=your_app_password
 NOTIFY_EMAIL=recipient@email.com
+```
+
+For SMS (Twilio):
+
+```bash
+NOTIFICATION_CHANNEL=auto
+ENABLE_TWILIO=true
+TWILIO_ACCOUNT_SID=your_sid
+TWILIO_AUTH_TOKEN=your_token
+TWILIO_FROM_NUMBER=+1234567890
+NOTIFY_PHONE=+15551234567
+```
+
+For Apple Messages (macOS):
+
+```bash
+NOTIFICATION_CHANNEL=apple_messages
+NOTIFY_PHONE=+15551234567
 ```
 
 ## Cron Setup
@@ -156,12 +191,13 @@ stock_tracker/
 
 ## How It Works
 
-1. **Price Check**: Fetches current prices via yfinance
-2. **Threshold Detection**: Compares against previous price in SQLite
-3. **News Gathering**: Fetches recent headlines via Google News RSS
-4. **Explanation**: Generates 2-3 sentence explanation via Ollama
-5. **Notification**: Sends alert via configured channel
-6. **Logging**: Saves execution metadata to SQLite
+1. **Price Check**: Fetches current prices via multi-provider system (Finnhub → Twelve Data → Alpha Vantage → Yahoo Finance)
+2. **Caching**: 60-second cache prevents redundant API calls
+3. **Threshold Detection**: Compares against previous price in SQLite
+4. **News Gathering**: Fetches recent headlines via Google News RSS
+5. **Explanation**: Generates 2-3 sentence explanation via Ollama
+6. **Notification**: Sends alert via configured channel (with automatic fallback)
+7. **Logging**: Saves execution metadata to SQLite
 
 ## Example Output
 

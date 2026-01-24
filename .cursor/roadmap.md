@@ -6,6 +6,7 @@
 |---------|--------|-------------|
 | v0.1 | ✅ Complete | MVP — Core functionality |
 | v0.2 | ✅ Complete | SMS & Messaging channels |
+| v0.3 | ✅ Complete | Multi-provider market data |
 | v1.0 | 📋 Planned | Production-ready release |
 
 ---
@@ -69,6 +70,37 @@
 - [x] Twilio adapter ready (pending A2P registration)
 - [x] Fallback chain operational
 - [x] All tests passing (46 tests)
+
+---
+
+## v0.3 — Multi-Provider Market Data ✅
+
+**Goal**: Professional-grade market data reliability with graceful fallback.
+
+### Features
+- [x] Multi-provider market data strategy
+- [x] Automatic fallback on rate limits and failures
+- [x] Four provider support: Finnhub, Twelve Data, Alpha Vantage, Yahoo Finance
+- [x] 60-second price caching
+- [x] Provider priority ordering
+- [x] Clean error handling
+
+### Technical Requirements
+- [x] `PriceQuote` normalized model
+- [x] `MarketDataProvider` Protocol interface
+- [x] Four provider adapters (thin, no retries, no fallback logic)
+- [x] `MarketDataService` orchestrator
+- [x] Exception hierarchy (RateLimitError, ProviderUnavailableError)
+- [x] Integration with existing PriceService
+- [x] Comprehensive test suite (15 new tests)
+
+### Definition of Done
+- [x] Fallback occurs when primary provider rate-limits
+- [x] Secondary provider used correctly
+- [x] Cache prevents redundant API calls
+- [x] Failure is clean if all providers unavailable
+- [x] Provider-specific errors don't leak upward
+- [x] All tests passing (56 tests)
 
 ---
 

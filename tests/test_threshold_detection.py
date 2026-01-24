@@ -164,48 +164,70 @@ class TestThresholdDetection:
         """
         Price service should correctly filter threshold breaches.
         """
-        with patch("src.services.price_service.YFinanceAdapter") as mock_class:
-            mock_adapter = MagicMock()
-            mock_class.return_value = mock_adapter
+        from unittest.mock import MagicMock
 
-            service = PriceService(
-                data_dir=temp_data_dir,
-                threshold=Decimal("2.0"),  # 2% threshold
+        from src.models.market_data import PriceQuote
+        from src.services.market_data_service import MarketDataService
+
+        mock_market_data = MagicMock(spec=MarketDataService)
+        mock_market_data.get_latest_price.side_effect = [
+            PriceQuote(
+                symbol="AAPL",
+                price=Decimal("100.00"),
+                timestamp=datetime(2026, 1, 23),
+                provider_name="test",
+            ),
+            PriceQuote(
+                symbol="NVDA",
+                price=Decimal("200.00"),
+                timestamp=datetime(2026, 1, 23),
+                provider_name="test",
+            ),
+        ]
+
+        service = PriceService(
+            data_dir=temp_data_dir,
+            threshold=Decimal("2.0"),  # 2% threshold
+            market_data_service=mock_market_data,
+        )
+
+        # Store initial prices
+        service.storage.save_price(
+            PricePoint(
+                symbol="AAPL",
+                price=Decimal("100.00"),
+                timestamp=datetime(2026, 1, 23),
             )
+        )
+        service.storage.save_price(
+            PricePoint(
+                symbol="NVDA",
+                price=Decimal("200.00"),
+                timestamp=datetime(2026, 1, 23),
+            )
+        )
+        service.get_price_changes(["AAPL", "NVDA"])
 
-            # Store initial prices
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
-                    symbol="AAPL",
-                    price=Decimal("100.00"),
-                    timestamp=datetime(2026, 1, 23),
-                ),
-                "NVDA": PricePoint(
-                    symbol="NVDA",
-                    price=Decimal("200.00"),
-                    timestamp=datetime(2026, 1, 23),
-                ),
-            }
-            service.get_price_changes(["AAPL", "NVDA"])
-
-            # New prices: AAPL +3% (breach), NVDA +1% (no breach)
-            mock_adapter.get_prices.return_value = {
-                "AAPL": PricePoint(
+        # New prices: AAPL +3% (breach), NVDA +1% (no breach)
+        mock_market_data.get_latest_price.side_effect = [
+                PriceQuote(
                     symbol="AAPL",
                     price=Decimal("103.00"),
                     timestamp=datetime(2026, 1, 24),
+                    provider_name="test",
                 ),
-                "NVDA": PricePoint(
+                PriceQuote(
                     symbol="NVDA",
                     price=Decimal("202.00"),
                     timestamp=datetime(2026, 1, 24),
+                    provider_name="test",
                 ),
-            }
-            breaches = service.get_threshold_breaches(["AAPL", "NVDA"])
+        ]
+        breaches = service.get_threshold_breaches(["AAPL", "NVDA"])
 
-            assert len(breaches) == 1
-            assert breaches[0].symbol == "AAPL"
-            assert breaches[0].threshold_exceeded is True
+        assert len(breaches) == 1
+        assert breaches[0].symbol == "AAPL"
+        assert breaches[0].threshold_exceeded is True
 
     def test_direction_property(self) -> None:
         """

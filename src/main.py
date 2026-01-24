@@ -8,6 +8,7 @@ from datetime import datetime
 from src.config import Settings, get_settings
 from src.models.alert import Alert
 from src.services.explanation_service import ExplanationService
+from src.services.market_data_factory import create_market_data_service
 from src.services.news_service import NewsService
 from src.services.notification_service import NotificationService
 from src.services.price_service import PriceService
@@ -50,10 +51,14 @@ def run_check(settings: Settings) -> int:
         logger.info("Starting stock check for: %s", settings.stock_symbols)
         logger.info("Threshold: %.2f%%", settings.price_threshold)
 
+        # Initialize market data service with multi-provider fallback
+        market_data_service = create_market_data_service(settings)
+
         # Initialize services
         price_service = PriceService(
             data_dir=settings.ensure_data_dir(),
             threshold=settings.price_threshold,
+            market_data_service=market_data_service,
         )
         news_service = NewsService()
         explanation_service = ExplanationService(

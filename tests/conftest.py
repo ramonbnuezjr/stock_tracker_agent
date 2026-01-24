@@ -14,7 +14,9 @@ import pytest
 
 from src.config import NotificationChannel, Settings
 from src.models.alert import Alert, Explanation
+from src.models.market_data import PriceQuote
 from src.models.stock import PriceChange, PricePoint
+from src.services.market_data_service import MarketDataService
 
 
 @pytest.fixture(autouse=True)
@@ -146,4 +148,17 @@ def mock_news_adapter() -> MagicMock:
         "Apple announces new product",
         "Tech stocks rally",
     ]
+    return mock
+
+
+@pytest.fixture
+def mock_market_data_service() -> MagicMock:
+    """Create a mock MarketDataService."""
+    mock = MagicMock(spec=MarketDataService)
+    mock.get_latest_price.return_value = PriceQuote(
+        symbol="AAPL",
+        price=Decimal("150.00"),
+        timestamp=datetime.utcnow(),
+        provider_name="test",
+    )
     return mock

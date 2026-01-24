@@ -98,6 +98,20 @@ class Settings(BaseSettings):
         description="Carrier for email-to-SMS (att, verizon, tmobile, etc.)",
     )
 
+    # Market data provider API keys
+    finnhub_api_key: str = Field(
+        default="",
+        description="Finnhub API key (free tier: 60 calls/min)",
+    )
+    twelve_data_api_key: str = Field(
+        default="",
+        description="Twelve Data API key (free tier: 800 calls/day)",
+    )
+    alpha_vantage_api_key: str = Field(
+        default="",
+        description="Alpha Vantage API key (free tier: 25 calls/day)",
+    )
+
     # LLM settings
     ollama_model: str = Field(
         default="mistral:7b",
