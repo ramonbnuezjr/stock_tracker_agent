@@ -1,8 +1,11 @@
 """News adapter for fetching stock-related headlines."""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from datetime import datetime
+from typing import List, Optional
 from urllib.parse import quote
 
 import feedparser
@@ -24,7 +27,7 @@ class NewsHeadline:
     title: str
     source: str
     url: str
-    published: datetime | None = None
+    published: Optional[datetime] = None
 
 
 class NewsAdapterError(Exception):
@@ -56,7 +59,7 @@ class NewsAdapter:
         self,
         symbol: str,
         max_headlines: int = 5,
-    ) -> list[NewsHeadline]:
+    ) -> List[NewsHeadline]:
         """Fetch recent news headlines for a stock symbol.
 
         Args:
@@ -84,7 +87,7 @@ class NewsAdapter:
                 )
                 return []
 
-            headlines: list[NewsHeadline] = []
+            headlines: List[NewsHeadline] = []
 
             for entry in feed.entries[:max_headlines]:
                 # Parse publication date
@@ -128,7 +131,7 @@ class NewsAdapter:
         self,
         symbol: str,
         max_headlines: int = 5,
-    ) -> list[str]:
+    ) -> List[str]:
         """Fetch headlines as plain text strings.
 
         Args:
@@ -145,7 +148,7 @@ class NewsAdapter:
         self,
         query: str,
         max_results: int = 5,
-    ) -> list[NewsHeadline]:
+    ) -> List[NewsHeadline]:
         """Search for news with a custom query.
 
         Args:
@@ -166,7 +169,7 @@ class NewsAdapter:
             if feed.bozo and not feed.entries:
                 return []
 
-            headlines: list[NewsHeadline] = []
+            headlines: List[NewsHeadline] = []
 
             for entry in feed.entries[:max_results]:
                 published = None

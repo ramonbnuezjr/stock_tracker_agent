@@ -1,8 +1,11 @@
 """Explanation service for generating LLM-powered stock movement explanations."""
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from decimal import Decimal
+from typing import List
 
 from src.adapters.ollama_adapter import OllamaAdapter, OllamaError
 from src.models.alert import Explanation
@@ -61,7 +64,7 @@ class ExplanationService:
     def generate_explanation(
         self,
         price_change: PriceChange,
-        headlines: list[str],
+        headlines: List[str],
     ) -> Explanation:
         """Generate an explanation for a price movement.
 
@@ -119,7 +122,7 @@ class ExplanationService:
     def _fallback_explanation(
         self,
         price_change: PriceChange,
-        headlines: list[str],
+        headlines: List[str],
     ) -> Explanation:
         """Generate a fallback explanation when LLM is unavailable.
 
@@ -165,7 +168,7 @@ class ExplanationService:
         symbol: str,
         previous_price: Decimal,
         current_price: Decimal,
-        headlines: list[str],
+        headlines: List[str],
     ) -> Explanation:
         """Generate explanation from raw values.
 

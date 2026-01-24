@@ -1,6 +1,9 @@
 """News service for fetching stock-related headlines."""
 
+from __future__ import annotations
+
 import logging
+from typing import List
 
 from src.adapters.news_adapter import NewsAdapter, NewsHeadline
 
@@ -26,7 +29,7 @@ class NewsService:
         self,
         symbol: str,
         max_headlines: int = 5,
-    ) -> list[NewsHeadline]:
+    ) -> List[NewsHeadline]:
         """Get recent news headlines for a stock symbol.
 
         Args:
@@ -43,7 +46,7 @@ class NewsService:
         self,
         symbol: str,
         max_headlines: int = 5,
-    ) -> list[str]:
+    ) -> List[str]:
         """Get headlines as plain text for LLM context.
 
         Args:
@@ -80,7 +83,7 @@ class NewsService:
 
         return "\n".join(formatted)
 
-    def get_market_news(self, max_headlines: int = 5) -> list[NewsHeadline]:
+    def get_market_news(self, max_headlines: int = 5) -> List[NewsHeadline]:
         """Get general market news headlines.
 
         Args:

@@ -1,7 +1,9 @@
 """Ollama adapter for local LLM inference."""
 
+from __future__ import annotations
+
 import logging
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import ollama
 
@@ -38,7 +40,7 @@ class OllamaAdapter:
         """
         self.model = model
         self.host = host
-        self._client: ollama.Client | None = None
+        self._client: Optional[ollama.Client] = None
 
     @property
     def client(self) -> ollama.Client:
@@ -54,7 +56,7 @@ class OllamaAdapter:
     def generate(
         self,
         prompt: str,
-        system_prompt: str | None = None,
+        system_prompt: Optional[str] = None,
         temperature: float = 0.3,
         max_tokens: int = 256,
     ) -> str:
@@ -73,7 +75,7 @@ class OllamaAdapter:
             OllamaError: If generation fails.
         """
         try:
-            messages: list[dict[str, Any]] = []
+            messages: List[Dict[str, Any]] = []
 
             if system_prompt:
                 messages.append({

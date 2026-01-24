@@ -1,7 +1,10 @@
 """Stock-related data models."""
 
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -18,7 +21,7 @@ class Stock(BaseModel):
     """
 
     symbol: str = Field(..., min_length=1, max_length=10)
-    name: str | None = None
+    name: Optional[str] = None
 
     @field_validator("symbol")
     @classmethod
@@ -107,7 +110,7 @@ class PriceChange(BaseModel):
     change_amount: Decimal
     change_percent: Decimal
     threshold_exceeded: bool = False
-    previous_timestamp: datetime | None = None
+    previous_timestamp: Optional[datetime] = None
     current_timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     @field_validator("symbol")
@@ -143,7 +146,7 @@ class PriceChange(BaseModel):
         previous: PricePoint,
         current: PricePoint,
         threshold: Decimal,
-    ) -> "PriceChange":
+    ) -> PriceChange:
         """Calculate price change between two price points.
 
         Args:

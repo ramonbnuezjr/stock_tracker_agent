@@ -1,11 +1,13 @@
 """SQLite storage adapter for price history and execution metadata."""
 
+from __future__ import annotations
+
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Generator
+from typing import Generator, List, Optional
 
 from src.models.stock import PricePoint
 
@@ -130,7 +132,7 @@ class StorageAdapter:
             )
             return cursor.lastrowid or 0
 
-    def get_latest_price(self, symbol: str) -> PricePoint | None:
+    def get_latest_price(self, symbol: str) -> Optional[PricePoint]:
         """Get the most recent price for a symbol.
 
         Args:
@@ -163,7 +165,7 @@ class StorageAdapter:
                 timestamp=row["timestamp"],
             )
 
-    def get_previous_price(self, symbol: str) -> PricePoint | None:
+    def get_previous_price(self, symbol: str) -> Optional[PricePoint]:
         """Get the second most recent price for comparison.
 
         Args:
@@ -200,7 +202,7 @@ class StorageAdapter:
         self,
         symbol: str,
         limit: int = 100,
-    ) -> list[PricePoint]:
+    ) -> List[PricePoint]:
         """Get price history for a symbol.
 
         Args:
@@ -234,7 +236,7 @@ class StorageAdapter:
                 for row in rows
             ]
 
-    def log_execution_start(self, symbols: list[str]) -> int:
+    def log_execution_start(self, symbols: List[str]) -> int:
         """Log the start of an execution run.
 
         Args:
@@ -260,7 +262,7 @@ class StorageAdapter:
         alerts_triggered: int,
         notifications_sent: int,
         success: bool = True,
-        error_message: str | None = None,
+        error_message: Optional[str] = None,
     ) -> None:
         """Log the completion of an execution run.
 
@@ -300,7 +302,7 @@ class StorageAdapter:
         change_amount: Decimal,
         previous_price: Decimal,
         current_price: Decimal,
-        explanation: str | None = None,
+        explanation: Optional[str] = None,
         notified: bool = False,
     ) -> int:
         """Save an alert record.

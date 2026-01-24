@@ -1,8 +1,11 @@
 """Yahoo Finance adapter for fetching stock prices."""
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from decimal import Decimal
+from typing import Dict, Optional
 
 import yfinance as yf
 
@@ -86,7 +89,7 @@ class YFinanceAdapter:
             logger.error("Failed to fetch price for %s: %s", symbol, e)
             raise YFinanceError(f"Failed to fetch price for {symbol}: {e}")
 
-    def get_prices(self, symbols: list[str]) -> dict[str, PricePoint]:
+    def get_prices(self, symbols: list) -> Dict[str, PricePoint]:
         """Fetch current prices for multiple symbols.
 
         Args:
@@ -95,7 +98,7 @@ class YFinanceAdapter:
         Returns:
             Dictionary mapping symbols to PricePoints.
         """
-        results: dict[str, PricePoint] = {}
+        results: Dict[str, PricePoint] = {}
 
         for symbol in symbols:
             try:
@@ -126,7 +129,7 @@ class YFinanceAdapter:
         except Exception:
             return False
 
-    def get_company_name(self, symbol: str) -> str | None:
+    def get_company_name(self, symbol: str) -> Optional[str]:
         """Get the company name for a symbol.
 
         Args:

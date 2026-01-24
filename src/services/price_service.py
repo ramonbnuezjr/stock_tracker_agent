@@ -1,8 +1,11 @@
 """Price service for fetching and comparing stock prices."""
 
+from __future__ import annotations
+
 import logging
 from decimal import Decimal
 from pathlib import Path
+from typing import Dict, List, Optional
 
 from src.adapters.storage_adapter import StorageAdapter
 from src.adapters.yfinance_adapter import YFinanceAdapter, YFinanceError
@@ -39,8 +42,8 @@ class PriceService:
 
     def fetch_current_prices(
         self,
-        symbols: list[str],
-    ) -> dict[str, PricePoint]:
+        symbols: List[str],
+    ) -> Dict[str, PricePoint]:
         """Fetch current prices for a list of symbols.
 
         Args:
@@ -54,8 +57,8 @@ class PriceService:
 
     def get_price_changes(
         self,
-        symbols: list[str],
-    ) -> list[PriceChange]:
+        symbols: List[str],
+    ) -> List[PriceChange]:
         """Fetch prices and calculate changes from previous values.
 
         Args:
@@ -64,7 +67,7 @@ class PriceService:
         Returns:
             List of PriceChange objects for all symbols.
         """
-        changes: list[PriceChange] = []
+        changes: List[PriceChange] = []
 
         # Fetch current prices
         current_prices = self.fetch_current_prices(symbols)
@@ -113,8 +116,8 @@ class PriceService:
 
     def get_threshold_breaches(
         self,
-        symbols: list[str],
-    ) -> list[PriceChange]:
+        symbols: List[str],
+    ) -> List[PriceChange]:
         """Get price changes that exceed the threshold.
 
         Args:
@@ -137,7 +140,7 @@ class PriceService:
 
         return breaches
 
-    def get_price(self, symbol: str) -> PricePoint | None:
+    def get_price(self, symbol: str) -> Optional[PricePoint]:
         """Get the current price for a single symbol.
 
         Args:
@@ -151,7 +154,7 @@ class PriceService:
         except YFinanceError:
             return None
 
-    def get_stored_price(self, symbol: str) -> PricePoint | None:
+    def get_stored_price(self, symbol: str) -> Optional[PricePoint]:
         """Get the most recent stored price for a symbol.
 
         Args:
@@ -166,7 +169,7 @@ class PriceService:
         self,
         symbol: str,
         limit: int = 100,
-    ) -> list[PricePoint]:
+    ) -> List[PricePoint]:
         """Get stored price history for a symbol.
 
         Args:

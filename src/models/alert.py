@@ -1,7 +1,10 @@
 """Alert and explanation data models."""
 
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +23,7 @@ class Explanation(BaseModel):
     """
 
     text: str = Field(..., min_length=1, max_length=1000)
-    news_headlines: list[str] = Field(default_factory=list)
+    news_headlines: List[str] = Field(default_factory=list)
     model: str = Field(default="unknown")
     generated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -47,7 +50,7 @@ class Alert(BaseModel):
     change_amount: Decimal
     previous_price: Decimal = Field(..., gt=0)
     current_price: Decimal = Field(..., gt=0)
-    explanation: Explanation | None = None
+    explanation: Optional[Explanation] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     notified: bool = False
 

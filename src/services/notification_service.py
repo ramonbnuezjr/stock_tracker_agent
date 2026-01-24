@@ -1,7 +1,9 @@
 """Notification service for sending stock alerts."""
 
+from __future__ import annotations
+
 import logging
-from enum import Enum
+from typing import List, Optional
 
 from src.adapters.email_adapter import EmailAdapter, EmailError
 from src.adapters.sms_adapter import SMSAdapter, SMSError
@@ -37,8 +39,8 @@ class NotificationService:
         self.channel = settings.notification_channel
 
         # Initialize adapters based on channel
-        self._email_adapter: EmailAdapter | None = None
-        self._sms_adapter: SMSAdapter | None = None
+        self._email_adapter: Optional[EmailAdapter] = None
+        self._sms_adapter: Optional[SMSAdapter] = None
 
         if self.channel == NotificationChannel.EMAIL:
             if settings.validate_email_config():
@@ -230,7 +232,7 @@ class NotificationService:
         </html>
         """
 
-    def send_alerts(self, alerts: list[Alert]) -> int:
+    def send_alerts(self, alerts: List[Alert]) -> int:
         """Send multiple alerts.
 
         Args:

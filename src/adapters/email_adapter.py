@@ -1,10 +1,13 @@
 """Email adapter for sending notifications via SMTP."""
 
+from __future__ import annotations
+
 import logging
 import smtplib
 import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +60,7 @@ class EmailAdapter:
         to_email: str,
         subject: str,
         body: str,
-        html_body: str | None = None,
+        html_body: Optional[str] = None,
     ) -> bool:
         """Send an email.
 
