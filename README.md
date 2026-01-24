@@ -194,24 +194,51 @@ stock_tracker/
 1. **Price Check**: Fetches current prices via multi-provider system (Finnhub → Twelve Data → Alpha Vantage → Yahoo Finance)
 2. **Caching**: 60-second cache prevents redundant API calls
 3. **Threshold Detection**: Compares against previous price in SQLite
-4. **News Gathering**: Fetches recent headlines via Google News RSS
-5. **Explanation**: Generates 2-3 sentence explanation via Ollama
-6. **Notification**: Sends alert via configured channel (with automatic fallback)
-7. **Logging**: Saves execution metadata to SQLite
+4. **If threshold breached** (>1.5% change):
+   - **News Gathering**: Fetches recent headlines via Google News RSS
+   - **Explanation**: Generates 2-3 sentence explanation via Ollama (like: "Nvidia down 1.89% due to geopolitical risks in China, a modest data center revenue miss...")
+   - **Notification**: Sends alert via configured channel (with automatic fallback)
+5. **Logging**: Saves execution metadata to SQLite
+
+**Note**: Explanations only appear when price movements exceed the threshold. On the first run, prices are stored but no alerts are sent (no previous prices to compare). Subsequent runs will detect and explain meaningful movements.
 
 ## Example Output
+
+### When Threshold Breach Detected:
 
 ```
 ============================================================
 STOCK ALERT
 ============================================================
-📈 AAPL is up +2.34% ($178.50 → $182.68)
+📉 NVDA is down -1.89% ($187.68 → $184.13)
 
-Apple shares rose following the company's announcement of
-record iPhone sales in Q4. Analysts cited strong demand
-in emerging markets as a key driver.
+Nvidia stock declined due to geopolitical risks in China,
+a modest data center revenue miss, lofty valuation concerns,
+and broader sentiment that the AI frenzy may be overheating.
 ============================================================
 ```
+
+**SMS/Apple Messages Format:**
+```
+⬇️ NVDA down 1.89%
+$187.68 → $184.13
+
+Nvidia stock declined due to geopolitical risks in China,
+a modest data center revenue miss, lofty valuation concerns,
+and broader sentiment that the AI frenzy may be overheating.
+```
+
+### First Run (No Previous Prices):
+
+On the first run, prices are fetched and stored, but no alerts are sent:
+
+```
+2026-01-24 15:39:17 [INFO] Price fetched for AAPL via finnhub: 248.05
+2026-01-24 15:39:17 [INFO] No previous price for AAPL, storing current: 248.05
+2026-01-24 15:39:17 [INFO] No threshold breaches detected
+```
+
+Subsequent runs will compare against stored prices and generate explanations when thresholds are exceeded.
 
 ## License
 

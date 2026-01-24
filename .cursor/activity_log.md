@@ -54,6 +54,8 @@
 - Updated configuration with API key support
 - Verified fallback logic works correctly in production smoke test
 - All 56 tests passing
+- **Learning**: Explanations only appear on threshold breaches, not on first run (no previous prices to compare)
+- Updated documentation to clarify when explanations are generated
 
 ### Next Steps
 - Complete Twilio A2P registration when available

@@ -179,6 +179,14 @@ mypy src
 ruff check src tests
 ```
 
+## Important Notes
+
+### When Explanations Are Generated
+
+- **First Run**: Prices are fetched and stored, but no explanations are generated (no previous prices to compare)
+- **Subsequent Runs**: Explanations are generated only when price movements exceed the configured threshold (default: 1.5%)
+- **Explanation Format**: 2-3 sentence LLM-generated explanation connecting price movement to recent news, similar to: "Nvidia down 1.89% due to geopolitical risks in China, a modest data center revenue miss, lofty valuation concerns, and broader sentiment that the AI frenzy may be overheating."
+
 ---
 
 ## LLM Integration
