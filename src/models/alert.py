@@ -6,7 +6,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from src.models.validators import validate_stock_symbol
 
 
 class Explanation(BaseModel):
@@ -53,6 +55,22 @@ class Alert(BaseModel):
     explanation: Optional[Explanation] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     notified: bool = False
+
+    @field_validator("symbol")
+    @classmethod
+    def symbol_validated(cls, v: str) -> str:
+        """Validate symbol using shared validator for security.
+
+        Args:
+            v: The symbol value to validate.
+
+        Returns:
+            The validated, uppercase symbol.
+
+        Raises:
+            ValueError: If symbol is invalid or contains prohibited characters.
+        """
+        return validate_stock_symbol(v)
 
     @property
     def direction(self) -> str:

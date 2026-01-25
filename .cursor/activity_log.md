@@ -68,7 +68,21 @@
 - Updated all documentation (README, SETUP_MACOS.md, changelog, activity_log)
 - Service verified working with real market data APIs
 
+### Session 6: v0.5 Security Enhancement
+- Implemented security logging for validation rejections
+- Created dedicated `SecurityLogger` class with separate log file
+- Enhanced symbol validation with shared validator function
+- Added command injection pattern detection
+- Updated all models to use shared validator for consistency
+- Added comprehensive security tests (10 test cases)
+- Created security validation smoke test script
+- All security tests passing (20/20)
+- Security logging working correctly (43+ violations logged during testing)
+- **Learning**: Security logging is standard practice for production systems
+- **Learning**: Input sanitization prevents log injection attacks
+
 ### Next Steps
 - Complete Twilio A2P registration when available
 - Consider batch notification mode for v1.0
-- Monitor service logs for production usage
+- Monitor service logs and security logs for production usage
+- Review security logs regularly for attack patterns

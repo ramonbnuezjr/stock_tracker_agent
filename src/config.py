@@ -11,6 +11,9 @@ from typing import Annotated
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from src.models.validators import validate_stock_symbol
+from src.security_logger import get_security_logger
+
 
 class NotificationChannel(str, Enum):
     """Supported notification channels."""
@@ -139,19 +142,68 @@ class Settings(BaseSettings):
     def validate_symbols(cls, v: str) -> str:
         """Validate and normalize stock symbols.
 
+        Validates each symbol using shared validator to prevent injection
+        attacks and ensure security. This is the entry point for all symbol
+        input from environment variables. Security violations are logged.
+
         Args:
             v: Comma-separated symbols string.
 
         Returns:
-            Normalized uppercase symbols string.
+            Normalized, validated uppercase symbols string.
 
         Raises:
-            ValueError: If no valid symbols provided.
+            ValueError: If no valid symbols provided or any symbol is invalid.
         """
-        symbols = [s.strip().upper() for s in v.split(",") if s.strip()]
-        if not symbols:
+        security_logger = get_security_logger()
+
+        if not v or not v.strip():
+            security_logger.log_validation_rejection(
+                input_value=v,
+                reason="Empty stock symbols configuration",
+                context={
+                    "validation_type": "settings_stock_symbols",
+                    "rule": "non_empty",
+                    "source": "environment_variable",
+                },
+            )
             raise ValueError("At least one stock symbol is required")
-        return ",".join(symbols)
+
+        # Parse and validate each symbol
+        validated_symbols = []
+        for symbol_str in v.split(","):
+            symbol_str = symbol_str.strip()
+            if symbol_str:
+                try:
+                    # Use shared validator for security and consistency
+                    # Security logging happens inside validate_stock_symbol
+                    validated = validate_stock_symbol(symbol_str)
+                    validated_symbols.append(validated)
+                except ValueError as e:
+                    # Additional context for Settings-level validation
+                    security_logger.log_validation_rejection(
+                        input_value=symbol_str,
+                        reason=f"Symbol validation failed: {str(e)}",
+                        context={
+                            "validation_type": "settings_stock_symbols",
+                            "source": "environment_variable",
+                            "symbol_list": v,
+                        },
+                    )
+                    raise
+
+        if not validated_symbols:
+            security_logger.log_validation_rejection(
+                input_value=v,
+                reason="No valid symbols after parsing",
+                context={
+                    "validation_type": "settings_stock_symbols",
+                    "source": "environment_variable",
+                },
+            )
+            raise ValueError("At least one valid stock symbol is required")
+
+        return ",".join(validated_symbols)
 
     @property
     def symbols_list(self) -> list[str]:

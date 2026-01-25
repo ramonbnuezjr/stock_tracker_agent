@@ -7,6 +7,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.models.validators import validate_stock_symbol
+
 
 class PriceQuote(BaseModel):
     """Normalized price quote from any market data provider.
@@ -29,15 +31,20 @@ class PriceQuote(BaseModel):
     @field_validator("symbol")
     @classmethod
     def symbol_uppercase(cls, v: str) -> str:
-        """Ensure symbol is uppercase.
+        """Ensure symbol is uppercase and validated.
+
+        Uses shared validator for security and consistency.
 
         Args:
             v: The symbol value to validate.
 
         Returns:
-            The uppercase symbol.
+            The validated, uppercase symbol.
+
+        Raises:
+            ValueError: If symbol is invalid or contains prohibited characters.
         """
-        return v.upper().strip()
+        return validate_stock_symbol(v)
 
     @field_validator("provider_name")
     @classmethod

@@ -14,6 +14,7 @@ A local-first stock monitoring agent that detects meaningful price movements and
 - 60-second price caching to reduce API calls
 - **Runs automatically on macOS** via launchd service
 - Runs periodically via cron (no background service)
+- **Security logging** for validation rejections and security violations
 
 ## Requirements
 
@@ -282,6 +283,31 @@ On the first run, prices are fetched and stored, but no alerts are sent:
 ```
 
 Subsequent runs will compare against stored prices and generate explanations when thresholds are exceeded.
+
+## Security
+
+### Input Validation
+
+All stock symbols are validated to prevent command injection and other security threats:
+
+- Valid symbols: `AAPL`, `NVDA`, `BRK.B`, `^NDXT`
+- Rejected patterns: command injection (`;`, `|`, `&`), path traversal (`../`, `/`), shell operators
+
+### Security Logging
+
+Security violations are logged to `logs/security.log`:
+
+- Validation rejections
+- Command injection attempts
+- Path traversal attempts
+- All violations include sanitized input and context
+
+View security logs:
+```bash
+tail -f logs/security.log
+```
+
+See `SECURITY_LOGGING.md` for detailed documentation.
 
 ## License
 

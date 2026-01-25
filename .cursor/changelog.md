@@ -10,21 +10,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- macOS launchd service setup for automatic execution
-- Service installation script (`scripts/install_service.sh`)
-- Service uninstallation script (`scripts/uninstall_service.sh`)
-- Test script for Apple Messages notifications (`scripts/test_imessage_notification.py`)
-- `SETUP_MACOS.md` guide for macOS service setup
-- Service management documentation in README
+- Security logging for rejected validation attempts
+- Dedicated security logger (`src/security_logger.py`)
+- Shared symbol validation function (`src/models/validators.py`)
+- Security log file (`logs/security.log`) for tracking violations
+- Comprehensive security validation tests (`tests/test_symbol_validation.py`)
+- Security validation smoke test script (`scripts/test_security_validation.py`)
+- `SECURITY_LOGGING.md` documentation
 
 ### Changed
-- Updated README with macOS service management commands
-- Updated `.gitignore` to exclude logs/ and data/ directories
+- Enhanced symbol validation across all models (Stock, PricePoint, PriceChange, PriceQuote, Alert)
+- Settings validation now validates each symbol individually
+- Improved security posture with command injection prevention
+- All models now use shared validator for consistency
 
-### Technical
-- Service runs every 30 minutes automatically
-- Plist file generated dynamically with project paths
-- Service can be managed via launchctl commands
+### Security
+- Rejects command injection patterns (;, |, &, `, $, etc.)
+- Rejects path traversal patterns (../, /, \)
+- Logs all validation rejections to security log
+- Sanitizes input for safe logging (prevents log injection)
+
+---
+
+## [0.5.0] - 2026-01-25
+
+### Added
+- Security logging for rejected validation attempts
+- Dedicated security logger (`src/security_logger.py`)
+- Shared symbol validation function (`src/models/validators.py`)
+- Security log file (`logs/security.log`) for tracking violations
+- Comprehensive security validation tests (`tests/test_symbol_validation.py`)
+- Security validation smoke test script (`scripts/test_security_validation.py`)
+- `SECURITY_LOGGING.md` documentation
+
+### Changed
+- Enhanced symbol validation across all models (Stock, PricePoint, PriceChange, PriceQuote, Alert)
+- Settings validation now validates each symbol individually
+- Improved security posture with command injection prevention
+- All models now use shared validator for consistency
+
+### Security
+- Rejects command injection patterns (;, |, &, `, $, etc.)
+- Rejects path traversal patterns (../, /, \)
+- Logs all validation rejections to security log
+- Sanitizes input for safe logging (prevents log injection)
 
 ---
 

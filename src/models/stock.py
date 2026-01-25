@@ -8,6 +8,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.models.validators import validate_stock_symbol
+
 
 class Stock(BaseModel):
     """Represents a stock with its basic information.
@@ -28,20 +30,19 @@ class Stock(BaseModel):
     def symbol_uppercase(cls, v: str) -> str:
         """Ensure symbol is uppercase and alphanumeric.
 
+        Uses shared validator to prevent injection attacks and ensure
+        consistent validation across the codebase.
+
         Args:
             v: The symbol value to validate.
 
         Returns:
-            The uppercase, stripped symbol.
+            The validated, uppercase, stripped symbol.
 
         Raises:
-            ValueError: If symbol contains non-alphanumeric characters.
+            ValueError: If symbol is invalid or contains prohibited characters.
         """
-        cleaned = v.upper().strip()
-        # Allow dots for indices like ^NDXT or BRK.B
-        if not all(c.isalnum() or c in ".^-" for c in cleaned):
-            raise ValueError("Symbol must be alphanumeric (dots, ^, - allowed)")
-        return cleaned
+        return validate_stock_symbol(v)
 
 
 class PricePoint(BaseModel):
@@ -65,15 +66,20 @@ class PricePoint(BaseModel):
     @field_validator("symbol")
     @classmethod
     def symbol_uppercase(cls, v: str) -> str:
-        """Ensure symbol is uppercase.
+        """Ensure symbol is uppercase and validated.
+
+        Uses shared validator for security and consistency.
 
         Args:
             v: The symbol value to validate.
 
         Returns:
-            The uppercase symbol.
+            The validated, uppercase symbol.
+
+        Raises:
+            ValueError: If symbol is invalid or contains prohibited characters.
         """
-        return v.upper().strip()
+        return validate_stock_symbol(v)
 
     @field_validator("currency")
     @classmethod
@@ -116,15 +122,20 @@ class PriceChange(BaseModel):
     @field_validator("symbol")
     @classmethod
     def symbol_uppercase(cls, v: str) -> str:
-        """Ensure symbol is uppercase.
+        """Ensure symbol is uppercase and validated.
+
+        Uses shared validator for security and consistency.
 
         Args:
             v: The symbol value to validate.
 
         Returns:
-            The uppercase symbol.
+            The validated, uppercase symbol.
+
+        Raises:
+            ValueError: If symbol is invalid or contains prohibited characters.
         """
-        return v.upper().strip()
+        return validate_stock_symbol(v)
 
     @property
     def direction(self) -> str:
