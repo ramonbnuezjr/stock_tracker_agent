@@ -65,7 +65,7 @@ class Settings(BaseSettings):
 
     # Stock tracking
     stock_symbols: str = Field(
-        default="AAPL,NVDA,MSFT",
+        default="AAPL,NVDA,MSFT,AVGO,AMD,INTC,AMZN,GOOG,META,TSM,MU,ASML",
         description="Comma-separated list of stock symbols",
     )
     price_threshold: Annotated[

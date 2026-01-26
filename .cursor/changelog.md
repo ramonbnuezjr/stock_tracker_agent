@@ -10,25 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Security logging for rejected validation attempts
-- Dedicated security logger (`src/security_logger.py`)
-- Shared symbol validation function (`src/models/validators.py`)
-- Security log file (`logs/security.log`) for tracking violations
-- Comprehensive security validation tests (`tests/test_symbol_validation.py`)
-- Security validation smoke test script (`scripts/test_security_validation.py`)
-- `SECURITY_LOGGING.md` documentation
+- Expanded stock tracking to 12 tech stocks (from 3)
+- New symbols: AVGO, AMD, INTC, AMZN, GOOG, META, TSM, MU, ASML
 
 ### Changed
-- Enhanced symbol validation across all models (Stock, PricePoint, PriceChange, PriceQuote, Alert)
-- Settings validation now validates each symbol individually
-- Improved security posture with command injection prevention
-- All models now use shared validator for consistency
-
-### Security
-- Rejects command injection patterns (;, |, &, `, $, etc.)
-- Rejects path traversal patterns (../, /, \)
-- Logs all validation rejections to security log
-- Sanitizes input for safe logging (prevents log injection)
+- Default `STOCK_SYMBOLS` now includes 12 tech stocks
+- Updated `.env.example` with expanded symbol list
+- Updated README configuration documentation
 
 ---
 

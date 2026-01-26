@@ -114,7 +114,7 @@ Set via environment variables or `.env` file:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STOCK_SYMBOLS` | `AAPL,NVDA,MSFT` | Comma-separated stock symbols |
+| `STOCK_SYMBOLS` | `AAPL,NVDA,MSFT,...` | Comma-separated stock symbols (default: 12 tech stocks) |
 | `PRICE_THRESHOLD` | `1.5` | Alert threshold (percentage) |
 | `NOTIFICATION_CHANNEL` | `auto` | `auto`, `sms`, `apple_messages`, `email`, `console` |
 | `OLLAMA_MODEL` | `mistral:7b` | LLM model for explanations |
