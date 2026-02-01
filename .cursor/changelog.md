@@ -12,11 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Expanded stock tracking to 12 tech stocks (from 3)
 - New symbols: AVGO, AMD, INTC, AMZN, GOOG, META, TSM, MU, ASML
+- Phi-3 Mini via llama-cpp-python (replaces Ollama/Mistral 7B)
+- Download script for Phi-3 Mini GGUF (`scripts/download_phi3_mini.py`) — downloads to `./models/` and sets `LLAMA_MODEL_PATH` in `.env`
+- LLM smoke test for all monitored stocks (`scripts/smoke_test_llm.py` uses `STOCK_SYMBOLS`)
+- `huggingface_hub` dependency for model download
+- `models/` in `.gitignore`
 
 ### Changed
 - Default `STOCK_SYMBOLS` now includes 12 tech stocks
-- Updated `.env.example` with expanded symbol list
-- Updated README configuration documentation
+- Updated `.env.example` with expanded symbol list and LLM download script note
+- README: Quick Start step 2 (download script), smoke tests (all stocks + iMessage test), project structure (`models/`, scripts)
+- SETUP_MACOS: LLM and iMessage test section; verification steps
+- .cursor/instructions: `huggingface_hub` in dependencies; LLM setup (download script, smoke test, iMessage test)
 
 ---
 

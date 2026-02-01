@@ -90,8 +90,9 @@ def run_check(settings: Settings) -> int:
         )
         news_service = NewsService()
         explanation_service = ExplanationService(
-            model=settings.ollama_model,
-            host=settings.ollama_host,
+            model_path=settings.llama_model_path,
+            n_ctx=settings.llama_n_ctx,
+            n_gpu_layers=settings.llama_n_gpu_layers,
         )
         notification_service = NotificationService(settings)
 
@@ -216,21 +217,23 @@ def run_status(settings: Settings) -> int:
     print(f"Symbols: {settings.stock_symbols}")
     print(f"Threshold: {settings.price_threshold}%")
     print(f"Notification: {settings.notification_channel.value}")
-    print(f"LLM Model: {settings.ollama_model}")
+    print(f"LLM Model: {settings.llama_model_path or '(not set)'}")
     print(f"Data Dir: {settings.data_dir}")
     print(f"Log Level: {settings.log_level.value}")
 
     # Check LLM availability
     explanation_service = ExplanationService(
-        model=settings.ollama_model,
-        host=settings.ollama_host,
+        model_path=settings.llama_model_path,
+        n_ctx=settings.llama_n_ctx,
+        n_gpu_layers=settings.llama_n_gpu_layers,
     )
     llm_available = explanation_service.is_available()
     print(f"LLM Available: {'Yes' if llm_available else 'No'}")
 
     if not llm_available:
-        print(f"  -> Ensure Ollama is running: ollama serve")
-        print(f"  -> Pull model if needed: ollama pull {settings.ollama_model}")
+        print("  -> Set LLAMA_MODEL_PATH to your Phi-3 Mini GGUF file")
+        print("  -> Install: pip install llama-cpp-python")
+        print("  -> On Mac M2: CMAKE_ARGS=\"-DGGML_METAL=on\" pip install llama-cpp-python")
 
     # Check notification config
     if settings.notification_channel.value == "email":
@@ -260,7 +263,7 @@ Environment variables:
   STOCK_SYMBOLS       Comma-separated stock symbols (default: AAPL,NVDA,MSFT)
   PRICE_THRESHOLD     Alert threshold percentage (default: 1.5)
   NOTIFICATION_CHANNEL  console, email, or sms (default: console)
-  OLLAMA_MODEL        LLM model for explanations (default: mistral:7b)
+  LLAMA_MODEL_PATH    Path to GGUF model for explanations (e.g. Phi-3 Mini)
         """,
     )
 

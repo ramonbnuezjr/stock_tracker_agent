@@ -2,7 +2,9 @@
 yfinance==0.2.36
 pydantic==2.5.3
 pydantic-settings==2.1.0
-ollama==0.1.6
+# LLM: Phi-3 Mini via llama-cpp-python (on Mac M2: CMAKE_ARGS="-DGGML_METAL=on" pip install llama-cpp-python)
+llama-cpp-python>=0.2.0
+huggingface_hub>=0.20.0
 feedparser==6.0.10
 requests==2.31.0
 twilio==9.10.0

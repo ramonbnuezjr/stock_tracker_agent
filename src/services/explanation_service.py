@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List
 
-from src.adapters.ollama_adapter import OllamaAdapter, OllamaError
+from src.adapters.llama_cpp_adapter import LlamaCppAdapter, LlamaCppError
 from src.models.alert import Explanation
 from src.models.stock import PriceChange
 
@@ -39,9 +39,12 @@ Provide a brief, factual explanation in 2-3 sentences."""
 class ExplanationService:
     """Service for generating LLM-powered explanations of price movements.
 
+    Uses Phi-3 Mini (or other GGUF) via llama-cpp-python in-process.
+
     Args:
-        model: The Ollama model name.
-        host: The Ollama API host URL.
+        model_path: Path to the GGUF model file.
+        n_ctx: Context window size.
+        n_gpu_layers: GPU layers (-1 for Metal on Mac).
 
     Returns:
         An ExplanationService instance.
@@ -49,17 +52,24 @@ class ExplanationService:
 
     def __init__(
         self,
-        model: str = "mistral:7b",
-        host: str = "http://localhost:11434",
+        model_path: str | None = None,
+        n_ctx: int = 2048,
+        n_gpu_layers: int = -1,
     ) -> None:
         """Initialize the explanation service.
 
         Args:
-            model: The Ollama model name.
-            host: The Ollama API host URL.
+            model_path: Path to the GGUF file (required for generation).
+            n_ctx: Context size.
+            n_gpu_layers: GPU layers (-1 for all on Metal).
         """
-        self.model = model
-        self.adapter = OllamaAdapter(model=model, host=host)
+        self.model_path = model_path or ""
+        self.model_label = self.model_path or "llama.cpp"
+        self.adapter = LlamaCppAdapter(
+            model_path=self.model_path,
+            n_ctx=n_ctx,
+            n_gpu_layers=n_gpu_layers,
+        )
 
     def generate_explanation(
         self,
@@ -110,11 +120,11 @@ class ExplanationService:
             return Explanation(
                 text=text,
                 news_headlines=headlines,
-                model=self.model,
+                model=self.model_label,
                 generated_at=datetime.utcnow(),
             )
 
-        except OllamaError as e:
+        except LlamaCppError as e:
             logger.error("Failed to generate explanation: %s", e)
             # Return a fallback explanation
             return self._fallback_explanation(price_change, headlines)
@@ -159,7 +169,7 @@ class ExplanationService:
         """Check if the LLM is available for generating explanations.
 
         Returns:
-            True if Ollama is ready.
+            True if the model path exists and llama-cpp-python is installed.
         """
         return self.adapter.is_available()
 

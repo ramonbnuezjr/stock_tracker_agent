@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.adapters.ollama_adapter import OllamaAdapter, OllamaError
+from src.adapters.llama_cpp_adapter import LlamaCppAdapter, LlamaCppError
 from src.models.alert import Explanation
 from src.models.stock import PriceChange
 from src.services.explanation_service import ExplanationService
@@ -50,7 +50,7 @@ class TestExplanationGeneration:
         """
         Explanation must be concise (<= 3 sentences) and factual.
         """
-        with patch("src.services.explanation_service.OllamaAdapter") as mock_class:
+        with patch("src.services.explanation_service.LlamaCppAdapter") as mock_class:
             mock_adapter = MagicMock()
             # Return a compliant explanation
             mock_adapter.generate.return_value = (
@@ -86,7 +86,7 @@ class TestExplanationGeneration:
         """
         Explanation should clearly reference the stock symbol.
         """
-        with patch("src.services.explanation_service.OllamaAdapter") as mock_class:
+        with patch("src.services.explanation_service.LlamaCppAdapter") as mock_class:
             mock_adapter = MagicMock()
             mock_adapter.generate.return_value = (
                 "AAPL stock increased by 5% due to strong earnings."
@@ -111,7 +111,7 @@ class TestExplanationGeneration:
         If no news context is available, explanation should
         still be generated without failure.
         """
-        with patch("src.services.explanation_service.OllamaAdapter") as mock_class:
+        with patch("src.services.explanation_service.LlamaCppAdapter") as mock_class:
             mock_adapter = MagicMock()
             mock_adapter.generate.return_value = (
                 "AAPL stock moved without clear news catalyst. "
@@ -138,9 +138,9 @@ class TestExplanationGeneration:
         """
         If LLM fails, a fallback explanation should be generated.
         """
-        with patch("src.services.explanation_service.OllamaAdapter") as mock_class:
+        with patch("src.services.explanation_service.LlamaCppAdapter") as mock_class:
             mock_adapter = MagicMock()
-            mock_adapter.generate.side_effect = OllamaError("Connection refused")
+            mock_adapter.generate.side_effect = LlamaCppError("Connection refused")
             mock_class.return_value = mock_adapter
 
             service = ExplanationService()
@@ -163,9 +163,9 @@ class TestExplanationGeneration:
         """
         Fallback explanation should include first headline if available.
         """
-        with patch("src.services.explanation_service.OllamaAdapter") as mock_class:
+        with patch("src.services.explanation_service.LlamaCppAdapter") as mock_class:
             mock_adapter = MagicMock()
-            mock_adapter.generate.side_effect = OllamaError("Error")
+            mock_adapter.generate.side_effect = LlamaCppError("Error")
             mock_class.return_value = mock_adapter
 
             service = ExplanationService()
@@ -184,21 +184,21 @@ class TestExplanationGeneration:
         """
         The model used for generation should be recorded.
         """
-        with patch("src.services.explanation_service.OllamaAdapter") as mock_class:
+        with patch("src.services.explanation_service.LlamaCppAdapter") as mock_class:
             mock_adapter = MagicMock()
             mock_adapter.generate.return_value = "Test explanation."
             mock_class.return_value = mock_adapter
 
-            service = ExplanationService(model="llama3.2:3b")
+            service = ExplanationService(model_path="/path/to/model.gguf")
             explanation = service.generate_explanation(price_change, [])
 
-            assert explanation.model == "llama3.2:3b"
+            assert explanation.model == "/path/to/model.gguf"
 
     def test_explanation_service_checks_availability(self) -> None:
         """
         Service should be able to check if LLM is available.
         """
-        with patch("src.services.explanation_service.OllamaAdapter") as mock_class:
+        with patch("src.services.explanation_service.LlamaCppAdapter") as mock_class:
             mock_adapter = MagicMock()
             mock_adapter.is_available.return_value = True
             mock_class.return_value = mock_adapter
@@ -221,7 +221,7 @@ class TestExplanationGeneration:
             change_percent=Decimal("-5.00"),
         )
 
-        with patch("src.services.explanation_service.OllamaAdapter") as mock_class:
+        with patch("src.services.explanation_service.LlamaCppAdapter") as mock_class:
             mock_adapter = MagicMock()
             mock_adapter.generate.return_value = (
                 "NVDA stock fell 5% amid broader tech selloff."

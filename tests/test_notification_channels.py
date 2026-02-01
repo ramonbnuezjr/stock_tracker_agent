@@ -34,7 +34,7 @@ class TestEmailSMSChannel:
             explanation=Explanation(
                 text="Apple stock rose following strong iPhone sales in Q4.",
                 news_headlines=["Apple beats earnings estimates"],
-                model="mistral:7b",
+                model="llama.cpp",
             ),
             timestamp=datetime(2026, 1, 24, 12, 0, 0),
         )

@@ -80,6 +80,16 @@ Or use the helper script:
 
 ---
 
+## LLM (Phi-3 Mini) and Notifications
+
+Before or after the service is installed:
+
+1. **Download Phi-3 Mini** (one-time): `./venv/bin/python scripts/download_phi3_mini.py` — downloads the Q4 GGUF to `./models/` and sets `LLAMA_MODEL_PATH` in `.env`.
+2. **Smoke test the LLM**: `./venv/bin/python scripts/smoke_test_llm.py` — generates explanations for all monitored stocks; use Stats to watch CPU/RAM.
+3. **Test iMessage**: Set `NOTIFY_PHONE` in `.env`, then run `./venv/bin/python scripts/test_imessage_notification.py`. Messages must be signed in on the Mac; check the Messages app on the Mac if the iPhone does not receive.
+
+---
+
 ## Verification
 
 After installation, verify it's working:
@@ -136,6 +146,7 @@ ls -la logs/
 3. ✅ Test with: `./venv/bin/python -m src.main check`
 4. ✅ Monitor logs: `tail -f logs/stock_tracker.log`
 5. ✅ Wait for threshold breaches to see explanations!
+6. ✅ Smoke test the LLM with Stats: run `./venv/bin/python scripts/smoke_test_llm.py` and watch CPU/RAM in Stats (see README > Development > Smoke tests).
 
 The service will automatically:
 - Fetch stock prices every 30 minutes

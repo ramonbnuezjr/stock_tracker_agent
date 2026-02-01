@@ -79,7 +79,7 @@ class TestExecutionFlow:
         and notification dispatch should occur.
         """
         with patch("src.services.news_service.NewsAdapter") as mock_news, \
-             patch("src.services.explanation_service.OllamaAdapter") as mock_llm:
+             patch("src.services.explanation_service.LlamaCppAdapter") as mock_llm:
 
             # Setup mocks
             mock_market_data = MagicMock(spec=MarketDataService)
@@ -177,7 +177,7 @@ class TestExecutionFlow:
         start_time = time.time()
 
         with patch("src.services.news_service.NewsAdapter") as mock_news, \
-             patch("src.services.explanation_service.OllamaAdapter") as mock_llm:
+             patch("src.services.explanation_service.LlamaCppAdapter") as mock_llm:
 
             # Setup mocks with minimal delay
             mock_market_data = MagicMock(spec=MarketDataService)

@@ -38,3 +38,4 @@ Thumbs.db
 # Project specific
 test_fallback_demo.py
 test_explanation_demo.py
+models/

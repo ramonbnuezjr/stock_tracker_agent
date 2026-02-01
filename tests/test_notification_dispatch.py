@@ -32,7 +32,7 @@ class TestNotificationDispatch:
             explanation=Explanation(
                 text="Apple stock rose due to strong earnings.",
                 news_headlines=["Apple beats Q4 estimates"],
-                model="mistral:7b",
+                model="llama.cpp",
                 generated_at=datetime(2026, 1, 24, 12, 0, 0),
             ),
             timestamp=datetime(2026, 1, 24, 12, 0, 0),

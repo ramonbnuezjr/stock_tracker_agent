@@ -47,8 +47,9 @@ class Settings(BaseSettings):
         smtp_user: SMTP username/email.
         smtp_password: SMTP password or app password.
         notify_email: Email address to send notifications to.
-        ollama_model: Ollama model name for explanations.
-        ollama_host: Ollama API host URL.
+        llama_model_path: Path to GGUF model for explanations (e.g. Phi-3 Mini).
+        llama_n_ctx: Context window size.
+        llama_n_gpu_layers: GPU layers (-1 for Metal on Mac).
         data_dir: Directory for local data storage.
         log_level: Logging verbosity level.
 
@@ -115,14 +116,19 @@ class Settings(BaseSettings):
         description="Alpha Vantage API key (free tier: 25 calls/day)",
     )
 
-    # LLM settings
-    ollama_model: str = Field(
-        default="mistral:7b",
-        description="Ollama model for generating explanations",
+    # LLM settings (llama-cpp-python, e.g. Phi-3 Mini GGUF)
+    llama_model_path: str = Field(
+        default="",
+        description="Path to GGUF model for explanations (e.g. Phi-3 Mini)",
     )
-    ollama_host: str = Field(
-        default="http://localhost:11434",
-        description="Ollama API host URL",
+    llama_n_ctx: int = Field(
+        default=2048,
+        ge=256,
+        description="Context window size for the LLM",
+    )
+    llama_n_gpu_layers: int = Field(
+        default=-1,
+        description="GPU layers (-1 for Metal on Mac M2)",
     )
 
     # Storage

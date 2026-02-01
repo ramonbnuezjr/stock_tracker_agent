@@ -25,7 +25,7 @@ def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
     for key in list(os.environ.keys()):
         if key.startswith(("STOCK_", "PRICE_", "NOTIFICATION_", "SMTP_")):
             monkeypatch.delenv(key, raising=False)
-        if key.startswith(("OLLAMA_", "TWILIO_", "NOTIFY_", "LOG_", "DATA_")):
+        if key.startswith(("LLAMA_", "TWILIO_", "NOTIFY_", "LOG_", "DATA_")):
             monkeypatch.delenv(key, raising=False)
 
 
@@ -76,7 +76,7 @@ def sample_explanation() -> Explanation:
     return Explanation(
         text="Apple stock rose following strong earnings report.",
         news_headlines=["Apple beats Q4 estimates"],
-        model="mistral:7b",
+        model="llama.cpp",
         generated_at=datetime(2026, 1, 24, 12, 0, 0),
     )
 
@@ -132,8 +132,8 @@ def mock_yfinance_adapter() -> MagicMock:
 
 
 @pytest.fixture
-def mock_ollama_adapter() -> MagicMock:
-    """Create a mock Ollama adapter."""
+def mock_llama_cpp_adapter() -> MagicMock:
+    """Create a mock LlamaCpp adapter."""
     mock = MagicMock()
     mock.generate.return_value = "Stock moved due to market conditions."
     mock.is_available.return_value = True

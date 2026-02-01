@@ -10,7 +10,7 @@
 
 - Fetch current stock prices by ticker symbol
 - Detect price changes exceeding configurable thresholds
-- Generate natural-language explanations using local LLM (Ollama)
+- Generate natural-language explanations using local LLM (Phi-3 Mini via llama-cpp-python)
 - Send notifications via Twilio SMS, Apple Messages, email, or console
 - Automatic fallback: Twilio → Apple Messages → Console
 - Persist price history and execution metadata (SQLite)
@@ -53,7 +53,8 @@ only if/when multi-user or production-scale messaging is introduced.
 | `requests` | HTTP requests for market data providers |
 | `pydantic` | Data validation and models |
 | `pydantic-settings` | Environment configuration |
-| `ollama` | Local LLM integration |
+| `llama-cpp-python` | Local LLM integration (Phi-3 Mini GGUF) |
+| `huggingface_hub` | Download Phi-3 Mini GGUF (used by `scripts/download_phi3_mini.py`) |
 | `twilio` | SMS notifications |
 | `feedparser` | RSS news fetching |
 | `pytest` | Testing framework |
@@ -149,8 +150,9 @@ stock_tracker/
 | `SMTP_USER` | For email | - | SMTP username |
 | `SMTP_PASSWORD` | For email | - | SMTP password |
 | `NOTIFY_EMAIL` | For email | - | Recipient email |
-| `OLLAMA_MODEL` | No | `mistral:7b` | LLM model name |
-| `OLLAMA_HOST` | No | `http://localhost:11434` | Ollama API URL |
+| `LLAMA_MODEL_PATH` | Yes (for LLM) | - | Path to GGUF model (e.g. Phi-3 Mini) |
+| `LLAMA_N_CTX` | No | `2048` | Context window size |
+| `LLAMA_N_GPU_LAYERS` | No | `-1` | GPU layers (-1 for Metal on Mac M2) |
 | `DATA_DIR` | No | `./data` | Local storage directory |
 | `LOG_LEVEL` | No | `INFO` | Logging verbosity |
 
@@ -199,17 +201,13 @@ ruff check src tests
 
 ## LLM Integration
 
-The application uses Ollama for local LLM inference:
+The application uses **Phi-3 Mini via llama-cpp-python** for local LLM inference (in-process, no separate server):
 
-1. **Install Ollama**: https://ollama.ai
-2. **Pull a model**: `ollama pull mistral:7b`
-3. **Start server**: `ollama serve`
+1. **Install**: `pip install -r requirements.txt` (on Mac M2: `CMAKE_ARGS="-DGGML_METAL=on" pip install llama-cpp-python`)
+2. **Download** Phi-3 Mini GGUF: run `./venv/bin/python scripts/download_phi3_mini.py` (downloads to `./models/` and sets `LLAMA_MODEL_PATH` in `.env`). Or download manually and set `LLAMA_MODEL_PATH`.
+3. **Smoke test**: `./venv/bin/python scripts/smoke_test_llm.py` — generates explanations for all monitored stocks (`STOCK_SYMBOLS`). **iMessage test**: `./venv/bin/python scripts/test_imessage_notification.py` (requires `NOTIFY_PHONE` and Messages signed in on Mac).
 
-Supported models (8GB RAM compatible):
-- `mistral:7b` (recommended)
-- `llama3.2:3b` (smaller, faster)
-
-If Ollama is unavailable, a fallback explanation is generated.
+If the model is unavailable or generation fails, a fallback explanation is generated.
 
 ---
 
