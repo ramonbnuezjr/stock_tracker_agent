@@ -134,7 +134,7 @@ stock_tracker/
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `STOCK_SYMBOLS` | No | `AAPL,NVDA,MSFT` | Comma-separated stock symbols |
+| `STOCK_SYMBOLS` | No | `AAPL,NVDA,MSFT,...` (15 default) | Comma-separated stock symbols |
 | `PRICE_THRESHOLD` | No | `1.5` | Alert threshold (percentage) |
 | `NOTIFICATION_CHANNEL` | No | `auto` | `auto`, `sms`, `apple_messages`, `email`, `console` |
 | `FINNHUB_API_KEY` | Optional | - | Finnhub API key (60 calls/min free) |

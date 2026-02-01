@@ -114,7 +114,7 @@ Set via environment variables or `.env` file:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STOCK_SYMBOLS` | `AAPL,NVDA,MSFT,...` | Comma-separated stock symbols (default: 12 tech stocks) |
+| `STOCK_SYMBOLS` | `AAPL,NVDA,MSFT,...` | Comma-separated stock symbols (default: 15 tech/defense stocks) |
 | `PRICE_THRESHOLD` | `1.5` | Alert threshold (percentage) |
 | `NOTIFICATION_CHANNEL` | `auto` | `auto`, `sms`, `apple_messages`, `email`, `console` |
 | `LLAMA_MODEL_PATH` | (required) | Path to GGUF model (e.g. Phi-3 Mini) |
