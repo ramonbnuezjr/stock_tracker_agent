@@ -8,15 +8,39 @@ Launchd is macOS's native service manager. It's more reliable than cron on macOS
 
 ### Quick Install
 
+From **Terminal.app** (not from inside Cursor/IDE, so launchd loads in your user session):
+
 ```bash
 cd ~/AI\ Projects/stock_tracker
 ./scripts/install_service.sh
 ```
 
-This will:
+If you see **Load failed: 5** or **Unload failed: 5** (common on Sonoma+), use **bootstrap** and **bootout** with the GUI domain instead of `load`/`unload`:
+
+**Load the service:**
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
+```
+
+**Unload the service (when you need to stop or reinstall):**
+```bash
+launchctl bootout gui/$(id -u)/com.ramonbnuezjr.stocktracker
+```
+(Use the service **label** here, not the plist path.)
+
+**Check status** (use plain `list`; `list gui/$(id -u)` can fail on some macOS):
+```bash
+launchctl list | grep stocktracker
+```
+
+If bootstrap still fails, check: `plutil -lint ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist` and ensure the file is owned by you (`ls -la`).
+
+**If bootstrap fails with "5: Input/output error" on macOS 26 beta** (even from Terminal.app), launchd may be broken or stricter on the beta. Use **cron** instead (see Option 2 below) — it works regardless of launchd.
+
+The install script will:
 1. Create the launchd plist file
 2. Install it to `~/Library/LaunchAgents/`
-3. Start the service
+3. Start the service (or you run the `launchctl load` command above)
 
 ### Service Details
 
@@ -28,19 +52,19 @@ This will:
 
 ```bash
 # Check if service is running
-launchctl list | grep com.ramonbnuezjr.stocktracker
+launchctl list | grep stocktracker
 
 # View logs
-tail -f logs/stock_tracker.log
+tail -f ~/AI\ Projects/stock_tracker/logs/stock_tracker.log
 
-# Stop the service
-launchctl unload ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
+# Stop the service (use bootout if you started with bootstrap)
+launchctl bootout gui/$(id -u)/com.ramonbnuezjr.stocktracker
 
 # Start the service
-launchctl load ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
 
 # Uninstall
-./scripts/uninstall_service.sh
+cd ~/AI\ Projects/stock_tracker && ./scripts/uninstall_service.sh
 ```
 
 ### Customizing Schedule
@@ -60,21 +84,36 @@ launchctl load ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
 
 ---
 
-## Option 2: Cron (Alternative)
+## Option 2: Cron (Alternative / Fallback if launchd fails)
 
-If you prefer cron, use this schedule:
+Use cron if you prefer it, or **if launchd bootstrap fails** (e.g. on macOS 26 beta). Cron runs reliably regardless of launchd. **After a reboot**, cron is started automatically; your crontab runs once you’re logged in, so the stock tracker will run on schedule without any extra setup.
+
+**One-time setup:**
 
 ```bash
-# Edit crontab
-crontab -e
+# Ensure log directory exists
+mkdir -p ~/AI\ Projects/stock_tracker/logs
 
-# Add this line (runs every 30 minutes, 9am-4pm ET, Mon-Fri)
+# Edit your crontab
+crontab -e
+```
+
+Add this line (runs every 30 minutes, 24/7):
+
+```
+*/30 * * * * cd ~/AI\ Projects/stock_tracker && ./venv/bin/python -m src.main check >> ~/AI\ Projects/stock_tracker/logs/stock_tracker.log 2>&1
+```
+
+To run only during market hours (e.g. 9am–4pm ET, Mon–Fri), use:
+
+```
 */30 9-16 * * 1-5 cd ~/AI\ Projects/stock_tracker && ./venv/bin/python -m src.main check >> ~/AI\ Projects/stock_tracker/logs/stock_tracker.log 2>&1
 ```
 
 Or use the helper script:
 
 ```bash
+cd ~/AI\ Projects/stock_tracker
 ./scripts/create_cron_schedule.sh
 ```
 
@@ -113,11 +152,17 @@ tail -f logs/stock_tracker.log
 ### Service Not Running
 
 ```bash
-# Check if plist is valid
-plutil -lint ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
+# Load with bootstrap (use this if load/unload give "failed: 5"):
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
 
-# Check service errors
+# Check status (plain list works on all macOS):
 launchctl list | grep stocktracker
+
+# Stop service (bootout uses the label, not the path):
+launchctl bootout gui/$(id -u)/com.ramonbnuezjr.stocktracker
+
+# Check plist is valid
+plutil -lint ~/Library/LaunchAgents/com.ramonbnuezjr.stocktracker.plist
 ```
 
 ### Logs Not Appearing

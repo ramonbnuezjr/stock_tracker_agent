@@ -83,8 +83,9 @@ plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
     </array>
     -->
     
+    <!-- Run once when service is loaded, then every 30 min -->
     <key>RunAtLoad</key>
-    <false/>
+    <true/>
     
     <key>KeepAlive</key>
     <false/>

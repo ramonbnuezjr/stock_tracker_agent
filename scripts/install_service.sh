@@ -25,25 +25,26 @@ fi
 cd "$PROJECT_DIR"
 python3 scripts/create_launchd_plist.py
 
-# Check if service is already loaded
-if launchctl list | grep -q "$PLIST_NAME"; then
+# Unload if already loaded (use plain list - list gui/UID fails on some macOS)
+if launchctl list 2>/dev/null | grep -q "$PLIST_NAME"; then
     echo "⚠️  Service already loaded. Unloading first..."
-    launchctl unload "$PLIST_FILE" 2>/dev/null || true
+    launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
 fi
 
-# Load the service
+# Load with bootstrap (reliable on Sonoma+ when load/unload fail with error 5)
+GUI_DOMAIN="gui/$(id -u)"
 echo "🚀 Loading service..."
-launchctl load "$PLIST_FILE"
+launchctl bootstrap "$GUI_DOMAIN" "$PLIST_FILE"
 
 echo ""
 echo "✅ Stock Tracker service installed and started!"
 echo ""
-echo "Service will run every 30 minutes during market hours (9am-4pm ET, Mon-Fri)"
+echo "Service runs in the background every 30 minutes (first run at load)."
 echo ""
 echo "Useful commands:"
 echo "  Status:    launchctl list | grep $PLIST_NAME"
-echo "  Stop:      launchctl unload $PLIST_FILE"
-echo "  Start:     launchctl load $PLIST_FILE"
+echo "  Stop:      launchctl bootout gui/\$(id -u)/$PLIST_NAME"
+echo "  Start:     launchctl bootstrap gui/\$(id -u) $PLIST_FILE"
 echo "  Logs:      tail -f $PROJECT_DIR/logs/stock_tracker.log"
 echo "  Test run:  cd $PROJECT_DIR && ./venv/bin/python -m src.main check"
 echo ""

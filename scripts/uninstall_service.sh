@@ -9,8 +9,13 @@ PLIST_FILE="$HOME/Library/LaunchAgents/${PLIST_NAME}.plist"
 echo "🗑️  Uninstalling Stock Tracker Service..."
 echo ""
 
-# Unload service if running
-if launchctl list | grep -q "$PLIST_NAME"; then
+# Unload service if running (bootstrap domain on Sonoma+, else legacy load)
+GUI_DOMAIN="gui/$(id -u)"
+if launchctl list "$GUI_DOMAIN" 2>/dev/null | grep -q "$PLIST_NAME"; then
+    echo "Stopping service..."
+    launchctl bootout "$GUI_DOMAIN/$PLIST_NAME" 2>/dev/null || true
+    echo "✅ Service stopped"
+elif launchctl list 2>/dev/null | grep -q "$PLIST_NAME"; then
     echo "Stopping service..."
     launchctl unload "$PLIST_FILE" 2>/dev/null || true
     echo "✅ Service stopped"
